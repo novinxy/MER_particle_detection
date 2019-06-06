@@ -1,4 +1,4 @@
-function Binarization(file_name, radius)
+function Binarization(file_name, radius, thresh_level)
     I = imread(file_name);
 
     % open operation
@@ -14,8 +14,10 @@ function Binarization(file_name, radius)
     end
 
     % binarization OTSU threshold
-    level = graythresh(opening_img);
-    binary_img = imbinarize(opening_img, level);
+    if nargin < 3
+        thresh_level = graythresh(opening_img);
+    end
+    binary_img = imbinarize(opening_img, thresh_level);
 
     % filling holes
     binary_img = uint8(255 * binary_img);
