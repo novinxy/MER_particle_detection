@@ -1,4 +1,4 @@
-function Canny(file_name, radius, thresh, sigma)
+function result_img = Canny(file_name, radius, thresh, sigma)
     I = imread(file_name);
 
     % open operation
@@ -6,7 +6,7 @@ function Canny(file_name, radius, thresh, sigma)
     opening_img = imopen(I, disk_kernel);
 
     % save to file
-    imwrite(opening_img, Create_file_name(file_name, "open"));
+    % imwrite(opening_img, Create_file_name(file_name, "open"));
 
     % change to grayscale for JPG
     if Check_If_JPG(file_name)
@@ -20,7 +20,7 @@ function Canny(file_name, radius, thresh, sigma)
     edge_img = bwmorph(edge_img,'thin',Inf);
 
     % save to file
-    imwrite(edge_img, Create_file_name(file_name, "edge"));
+    % imwrite(edge_img, Create_file_name(file_name, "edge"));
     
     % filling image
     edge_img = uint8(255 * edge_img);
@@ -31,7 +31,7 @@ function Canny(file_name, radius, thresh, sigma)
     result_img = imopen(filled_img, square_kernel);
 
     % save to file
-    imwrite(result_img, Create_file_name(file_name, "result"))
+    % imwrite(result_img, Create_file_name(file_name, "result"))
 
-    imshow(result_img);
+    % imshow(result_img);
 end
