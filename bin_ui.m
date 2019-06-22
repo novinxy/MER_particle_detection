@@ -22,7 +22,7 @@ function varargout = bin_ui(varargin)
 
     % Edit the above text to modify the response to help bin_ui
 
-    % Last Modified by GUIDE v2.5 22-Jun-2019 18:12:36
+    % Last Modified by GUIDE v2.5 22-Jun-2019 19:11:40
 
     % Begin initialization code - DO NOT EDIT
     gui_Singleton = 1;
@@ -75,7 +75,7 @@ function bin_ui_OpeningFcn(hObject, eventdata, handles, varargin)
 
     % set(handles.imageList,'string', fileNames); 
     set(handles.otsuThreshold, 'value', true);
-    set(handles.openThreshold, 'enable', 'off')
+    set(handles.binThreshold, 'enable', 'off')
     set(handles.imagesPopupmenu, 'string', fileNames);
 
     contents = cellstr(get(handles.imagesPopupmenu,'String'));
@@ -194,14 +194,14 @@ function refresh_btn_Callback(hObject, eventdata, handles)
     
     if handles.binarizationFlag.Value == true
         if handles.otsuThreshold.Value == false
-            [myImage, otsu] = Binarization(fullPath, radius, handles.openThreshold.Value);
+            [myImage, otsu] = Binarization(fullPath, radius, handles.binThreshold.Value);
         else
             [myImage, otsu] = Binarization(fullPath, radius);
         end    
     
-        sliderValue = get(handles.openThreshold,'Value');
-        set(handles.silderValueText,'String',num2str(otsu));
-        set(handles.openThreshold,'Value',otsu);
+        sliderValue = get(handles.binThreshold,'Value');
+        set(handles.binThreshValueText,'String',num2str(otsu));
+        set(handles.binThreshold,'Value',otsu);
         display_image(myImage, handles);
     elseif handles.cannyFlag.Value == true
         low = str2double(handles.lowThresh.String);
@@ -223,10 +223,10 @@ function otsuThreshold_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of otsuThreshold
     flag = get(hObject, 'Value');
     if flag == true
-        % set(handles.openThreshold, 'Value', "");
-        set(handles.openThreshold, 'enable', 'off')
+        % set(handles.binThreshold, 'Value', "");
+        set(handles.binThreshold, 'enable', 'off')
     else
-        set(handles.openThreshold, 'enable', 'on')
+        set(handles.binThreshold, 'enable', 'on')
     end
 
 
@@ -243,8 +243,12 @@ function binarizationFlag_Callback(hObject, eventdata, handles)
         set(handles.highThresh, 'enable', 'off');
         set(handles.sigmaValue, 'enable', 'off');
         set(handles.otsuThreshold, 'enable', 'on');
-        set(handles.openThreshold, 'enable', 'on');
+        set(handles.binThreshold, 'enable', 'on');
+        set(handles.binPanel, 'Visible', 'on');
+        set(handles.cannyPanel, 'Visible', 'off');
+        set(handles.watershedPanel, 'Visible', 'off');
         set(handles.cannyFlag, 'Value', false);
+        set(handles.watershedFlag, 'Value', false);
     end
 
 
@@ -261,8 +265,12 @@ function cannyFlag_Callback(hObject, eventdata, handles)
         set(handles.highThresh, 'enable', 'on');
         set(handles.sigmaValue, 'enable', 'on');
         set(handles.otsuThreshold, 'enable', 'off');
-        set(handles.openThreshold, 'enable', 'off');
+        set(handles.binThreshold, 'enable', 'off');
+        set(handles.binPanel, 'Visible', 'off');
+        set(handles.cannyPanel, 'Visible', 'on');
+        set(handles.watershedPanel, 'Visible', 'off');
         set(handles.binarizationFlag, 'Value', false);
+        set(handles.watershedFlag, 'Value', false);
     end
 
 
@@ -346,21 +354,21 @@ end
 
 
 % --- Executes on slider movement.
-function openThreshold_Callback(hObject, eventdata, handles)
-% hObject    handle to openThreshold (see GCBO)
+function binThreshold_Callback(hObject, eventdata, handles)
+% hObject    handle to binThreshold (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
     handles = guidata(hObject);
-    sliderValue = get(handles.openThreshold,'Value');
-    set(handles.silderValueText,'String',num2str(sliderValue));
+    sliderValue = get(handles.binThreshold,'Value');
+    set(handles.binThreshValueText,'String',num2str(sliderValue));
 
 
 % --- Executes during object creation, after setting all properties.
-function openThreshold_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to openThreshold (see GCBO)
+function binThreshold_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to binThreshold (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -383,6 +391,190 @@ function sigmaValue_Callback(hObject, eventdata, handles)
 % --- Executes during object creation, after setting all properties.
 function sigmaValue_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to sigmaValue (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in watershedFlag.
+function watershedFlag_Callback(hObject, eventdata, handles)
+% hObject    handle to watershedFlag (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of watershedFlag
+flag_value = handles.watershedFlag.Value;
+if flag_value == true
+    set(handles.lowThresh, 'enable', 'off');
+    set(handles.highThresh, 'enable', 'off');
+    set(handles.sigmaValue, 'enable', 'off');
+    set(handles.otsuThreshold, 'enable', 'off');
+    set(handles.binThreshold, 'enable', 'off');
+    set(handles.binPanel, 'Visible', 'off');
+    set(handles.cannyPanel, 'Visible', 'off');
+    set(handles.watershedPanel, 'Visible', 'on');
+    set(handles.cannyFlag, 'Value', false);
+    set(handles.binarizationFlag, 'Value', false);
+    set(handles.cannyFlag, 'Value', false);
+end
+
+
+
+function waterSigmaValue_Callback(hObject, eventdata, handles)
+% hObject    handle to waterSigmaValue (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of waterSigmaValue as text
+%        str2double(get(hObject,'String')) returns contents of waterSigmaValue as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function waterSigmaValue_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to waterSigmaValue (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function gradientThreshValue_Callback(hObject, eventdata, handles)
+% hObject    handle to gradientThreshValue (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of gradientThreshValue as text
+%        str2double(get(hObject,'String')) returns contents of gradientThreshValue as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function gradientThreshValue_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to gradientThreshValue (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function gaussianSigmaValue_Callback(hObject, eventdata, handles)
+% hObject    handle to gaussianSigmaValue (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of gaussianSigmaValue as text
+%        str2double(get(hObject,'String')) returns contents of gaussianSigmaValue as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function gaussianSigmaValue_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to gaussianSigmaValue (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function filterValue_Callback(hObject, eventdata, handles)
+% hObject    handle to filterValue (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of filterValue as text
+%        str2double(get(hObject,'String')) returns contents of filterValue as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function filterValue_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to filterValue (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function waterLowThreshValue_Callback(hObject, eventdata, handles)
+% hObject    handle to waterLowThreshValue (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of waterLowThreshValue as text
+%        str2double(get(hObject,'String')) returns contents of waterLowThreshValue as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function waterLowThreshValue_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to waterLowThreshValue (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function waterHighThreshValue_Callback(hObject, eventdata, handles)
+% hObject    handle to waterHighThreshValue (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of waterHighThreshValue as text
+%        str2double(get(hObject,'String')) returns contents of waterHighThreshValue as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function waterHighThreshValue_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to waterHighThreshValue (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function sharpenRadius_Callback(hObject, eventdata, handles)
+% hObject    handle to sharpenRadius (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of sharpenRadius as text
+%        str2double(get(hObject,'String')) returns contents of sharpenRadius as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function sharpenRadius_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to sharpenRadius (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
