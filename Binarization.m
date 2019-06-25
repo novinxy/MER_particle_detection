@@ -1,4 +1,4 @@
-function Binarization(file_name, radius, thresh_level)
+function [result_img, thresh_level] = Binarization(file_name, radius, thresh_level)
     I = imread(file_name);
 
     % open operation
@@ -6,7 +6,7 @@ function Binarization(file_name, radius, thresh_level)
     opening_img = imopen(I, disk_kernel);
 
     % save to file
-    imwrite(opening_img, Create_file_name(file_name, "open"));
+    % imwrite(opening_img, Create_file_name(file_name, "open"));
     
     % change to grayscale for JPG
     if Check_If_JPG(file_name)
@@ -27,8 +27,8 @@ function Binarization(file_name, radius, thresh_level)
     result_img = imclearborder(filled);
 
     % save to file
-    imwrite(result_img, Create_file_name(file_name, "bin"))
+    % imwrite(result_img, Create_file_name(file_name, "bin"))
 
-    imshow(result_img);
+    % imshow(result_img);
 end
 
