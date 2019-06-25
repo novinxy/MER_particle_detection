@@ -1,4 +1,4 @@
-function [result_img, thresh_level] = Binarization(file_name, radius, thresh_level)
+function [result_img, thresh_level] = Binarization(file_name, log, radius, thresh_level)
     I = imread(file_name);
 
     % open operation
@@ -6,7 +6,9 @@ function [result_img, thresh_level] = Binarization(file_name, radius, thresh_lev
     opening_img = imopen(I, disk_kernel);
 
     % save to file
-    % imwrite(opening_img, Create_file_name(file_name, "open"));
+    if log == true
+        imwrite(opening_img, Create_file_name(file_name, "open"));
+    end
     
     % change to grayscale for JPG
     if Check_If_JPG(file_name)
@@ -14,7 +16,7 @@ function [result_img, thresh_level] = Binarization(file_name, radius, thresh_lev
     end
 
     % binarization OTSU threshold
-    if nargin < 3
+    if nargin < 4
         thresh_level = graythresh(opening_img);
     end
     binary_img = imbinarize(opening_img, thresh_level);
@@ -27,8 +29,10 @@ function [result_img, thresh_level] = Binarization(file_name, radius, thresh_lev
     result_img = imclearborder(filled);
 
     % save to file
-    % imwrite(result_img, Create_file_name(file_name, "bin"))
+    if log == true
+        imwrite(result_img, Create_file_name(file_name, "bin"))
+    end
 
-    % imshow(result_img);
+    imshow(result_img);
 end
 
