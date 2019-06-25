@@ -21,7 +21,7 @@
 
 % Edit the above text to modify the response to help bin_ui
 
-% Last Modified by GUIDE v2.5 24-Jun-2019 22:46:04
+% Last Modified by GUIDE v2.5 25-Jun-2019 22:13:52
 
 % Begin initialization code - DO NOT EDIT
 function varargout = bin_ui(varargin)
@@ -481,7 +481,13 @@ function sharpRadius_CreateFcn(hObject, eventdata, handles)
         set(hObject,'BackgroundColor','white');
     end
 
-
+% --- Executes on button press in saveStepsIMGs.
+% hObject    handle to saveStepsIMGs (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% Hint: get(hObject,'Value') returns toggle state of saveStepsIMGs
+function saveStepsIMGs_Callback(hObject, eventdata, handles)
+    
 
 
 
@@ -512,10 +518,12 @@ function DisplayImage(myImage, h)
 
 % --- Calls Binarization with correct args
 function BnarizationCallback(h, path, radius)
+    saveImgsflag = h.saveStepsIMGs.Value;
+
     if h.otsuThreshold.Value == false
-        [resultImg, otsu] = Binarization(path, radius, h.binThreshold.Value);
+        [resultImg, otsu] = Binarization(path, saveImgsflag, radius, h.binThreshold.Value);
     else
-        [resultImg, otsu] = Binarization(path, radius);
+        [resultImg, otsu] = Binarization(path, saveImgsflag, radius);
     end    
 
     set(h.binThreshValueText, 'String', num2str(otsu));
@@ -525,12 +533,14 @@ function BnarizationCallback(h, path, radius)
 
 % --- Calls Canny with correct args
 function CannyCallback(h, path, radius)
+    saveImgsflag = h.saveStepsIMGs.Value;
+
     [s1, low]   = TryGet(h.lowThresh,  @(low) 0 < low && low < 1, "Incorrect low value, should be: 0 < low < high < 1");
     [s2, high]  = TryGet(h.highThresh, @(high) 0 < high && low < high && high < 1, "Incorrect high value, should be: 0 < low < high < 1");
     [s3, sigma] = TryGet(h.sigmaValue, @(sigma) sigma > 0, "Sigma should be bigger than zero: sigma > 0");
 
-    if s1 && s1 && s3
-        resultImg = Canny(path, radius, [low, high], sigma);
+    if s1 && s2 && s3
+        resultImg = Canny(path, saveImgsflag, radius, [low, high], sigma);
     else
         return;
     end
@@ -539,6 +549,8 @@ function CannyCallback(h, path, radius)
 
 % --- Calls Watershed with correct args
 function WatershedCallback(h, path, radius)
+    saveImgsflag = h.saveStepsIMGs.Value;
+
     [s1, sharp_radius]    = TryGet(h.sharpRadius,          @(radius) radius > 0, "Sharpen Radius should be bigger than zero: radius > 0");
     [s2, low]             = TryGet(h.waterLowThreshValue,  @(low) 0 < low && low < 1, "Incorrect low value, should be: 0 < low < high < 1");
     [s3, high]            = TryGet(h.waterHighThreshValue, @(high) 0 < high && low < high && high < 1, "Incorrect high value, should be: 0 < low < high < 1");
@@ -548,7 +560,7 @@ function WatershedCallback(h, path, radius)
     [s7, gauss_filter]    = TryGet(h.filterValue,          @(gFilter) mod(gFilter, 2) == 1, "Gaussian filter should be odd value");
 
     if s1 && s2 && s3 && s4 && s5 && s6 && s7
-        resultImg = Watershed(path, radius, sharp_radius, [low, high], sigma, gradient_thresh, gauss_sigma, gauss_filter);
+        resultImg = Watershed(path, saveImgsflag, radius, sharp_radius, [low, high], sigma, gradient_thresh, gauss_sigma, gauss_filter);
     else
         return;
     end
@@ -571,3 +583,5 @@ function [success, value] = TryGet(handle, predicate, errMsg)
         set(handle,'Backgroundcolor','r');
         uiwait(msgbox(errMsg));
     end
+
+

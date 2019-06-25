@@ -1,11 +1,13 @@
-function result_img = Watershed(file_name, open_radius, sharpen_radius, thresh, sigma, gradient_threshold, gaussian_sigma, guassian_filter)
+function result_img = Watershed(file_name, log, open_radius, sharpen_radius, thresh, sigma, gradient_threshold, gaussian_sigma, guassian_filter)
     I = imread(file_name);
 
     % open operation
     disk_kernel = Disk_kernel(open_radius);
     opening_img = imopen(I, disk_kernel);
 
-    % imwrite(opening_img, Create_file_name(file_name, "open"));
+    if log == true
+        imwrite(opening_img, Create_file_name(file_name, "open"));
+    end
 
     % change to grayscale for JPG
     if Check_If_JPG(file_name)
@@ -26,16 +28,22 @@ function result_img = Watershed(file_name, open_radius, sharpen_radius, thresh, 
             edge_img = uint16(65535 * edge_img);
         end
 
-        % imwrite(edge_img, Create_file_name(file_name, "edge"));
+        if log == true
+            imwrite(edge_img, Create_file_name(file_name, "edge"));
+        end
 
         % add edge to sharpened img
         added_img = sharpened_img + edge_img;
-        % imwrite(added_img, Create_file_name(file_name, "add"));
+        if log == true
+            imwrite(added_img, Create_file_name(file_name, "add"));
+        end
 
         % gradient filtering
         [gmag, gdir] = imgradient(added_img);
         gradient_img = gmag > gradient_threshold;
-        % imwrite(gradient_img, Create_file_name(file_name, "gradient"));
+        if log == true
+            imwrite(gradient_img, Create_file_name(file_name, "gradient"));
+        end
 
     % FIRST PARALLEL 
     % END
@@ -46,7 +54,9 @@ function result_img = Watershed(file_name, open_radius, sharpen_radius, thresh, 
         % binarization OTSU threshold
         level = graythresh(sharpened_img);
         binary_img = imbinarize(sharpened_img, level);
-        % imwrite(binary_img, Create_file_name(file_name, "bin"));
+        if log == true
+            imwrite(binary_img, Create_file_name(file_name, "bin"));
+        end
 
         % filling holes
         if isa(opening_img, 'uint8')
@@ -54,20 +64,26 @@ function result_img = Watershed(file_name, open_radius, sharpen_radius, thresh, 
         else
             binary_img = uint16(65535 * binary_img);
         end
-        % binary_img = uint8(255 * binary_img);
+
         filled = imfill(binary_img);
-        % imwrite(filled, Create_file_name(file_name, "fill"));
+        if log == true
+            imwrite(filled, Create_file_name(file_name, "fill"));
+        end
 
         % distance transform
         distance_img = bwdist(~filled);
 
         % gaussian filtering
         gaussian_img = imgaussfilt(distance_img, gaussian_sigma, 'FilterSize', guassian_filter);
-        % imwrite(gaussian_img, Create_file_name(file_name, "gaussian"));
+        if log == true
+            imwrite(gaussian_img, Create_file_name(file_name, "gaussian"));
+        end
 
         % Finding markers(MS)/ extended maxima detection
         img = imextendedmax(gaussian_img, 0.001);
-        % imwrite(img, Create_file_name(file_name, "MAX"));
+        if log == true
+            imwrite(img, Create_file_name(file_name, "MAX"));
+        end
 
     % SECOND PARALLEL 
     % END
@@ -82,7 +98,6 @@ function result_img = Watershed(file_name, open_radius, sharpen_radius, thresh, 
     else
         water_img = uint16(65535 * water_img);
     end
-    % water_img = uint8(255 * water_img); % from logical to values
 
     % binarization OTSU threshold
     level = graythresh(water_img);
@@ -90,10 +105,11 @@ function result_img = Watershed(file_name, open_radius, sharpen_radius, thresh, 
 
     % deleting border objects
     result_img = imclearborder(binary_img);
-    % imwrite(result_img, Create_file_name(file_name, "result"));
+    if log == true
+        imwrite(result_img, Create_file_name(file_name, "result"));
+    end
 
     % figure
-    % imshow(result_img);
-
+    imshow(result_img);
 end
 
