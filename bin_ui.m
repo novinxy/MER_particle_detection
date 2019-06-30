@@ -21,7 +21,7 @@
 
 % Edit the above text to modify the response to help bin_ui
 
-% Last Modified by GUIDE v2.5 25-Jun-2019 22:13:52
+% Last Modified by GUIDE v2.5 30-Jun-2019 19:29:17
 
 % Begin initialization code - DO NOT EDIT
 function varargout = bin_ui(varargin)
@@ -165,14 +165,15 @@ function refresh_btn_Callback(hObject, eventdata, handles)
         result_image = WatershedCallback(h, fullPath, radius);
     end
     
-    %         DisplayImage(result_image, h);
+    if h.showOriginal.Value == false
+        DisplayImage(result_image, h);
+    else
+        myImage = imread(fullPath);
+        myImage = histeq(myImage);
+        DisplayImage(myImage, h);
+    end
 
-    myImage = imread(fullPath);
-    myImage = histeq(myImage);
-    DisplayImage(myImage, h);
-    set(h.display ,'Units','pixels');
-    resizePos = get(h.display ,'Position');
-    result_image = imresize(result_image, [resizePos(3) resizePos(3)]);
+    result_image = FitToAxes(result_image, h);
     contours = GetContours(result_image);
     
     for index = 1:size(contours, 2)
@@ -502,7 +503,14 @@ function sharpRadius_CreateFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 % Hint: get(hObject,'Value') returns toggle state of saveStepsIMGs
 function saveStepsIMGs_Callback(hObject, eventdata, handles)
-    
+ 
+
+% --- Executes on button press in showOriginal.
+% hObject    handle to showOriginal (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+% Hint: get(hObject,'Value') returns toggle state of showOriginal    
+function showOriginal_Callback(hObject, eventdata, handles)
 
 
 
@@ -521,11 +529,16 @@ function path = GetFullPath(fileID, imageStructs)
     end
 
 
-% --- Disaplays image in axes.
-function DisplayImage(myImage, h)
+% --- Fits image to GUI axes
+function result_image = FitToAxes(image, h)
     set(h.display ,'Units','pixels');
     resizePos = get(h.display ,'Position');
-    myImage= imresize(myImage, [resizePos(3) resizePos(3)]);
+    result_image = imresize(image, [resizePos(3) resizePos(3)]);
+
+
+% --- Disaplays image in axes.
+function DisplayImage(myImage, h)
+    myImage = FitToAxes(myImage, h);
     axes(h.display);
     imshow(myImage);
     set(h.display ,'Units','normalized');
@@ -595,5 +608,8 @@ function [success, value] = TryGet(handle, predicate, errMsg)
         set(handle,'Backgroundcolor','r');
         uiwait(msgbox(errMsg));
     end
+
+
+
 
 
