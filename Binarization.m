@@ -33,6 +33,5 @@ function [result_img, thresh_level] = Binarization(file_name, log, radius, thres
         imwrite(result_img, Create_file_name(file_name, "bin"))
     end
 
-    imshow(result_img);
 end
 

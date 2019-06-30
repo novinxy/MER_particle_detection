@@ -109,7 +109,5 @@ function result_img = Watershed(file_name, log, open_radius, sharpen_radius, thr
         imwrite(result_img, Create_file_name(file_name, "result"));
     end
 
-    % figure
-    imshow(result_img);
 end
 

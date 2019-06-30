@@ -39,5 +39,4 @@ function result_img = Canny(file_name, log, radius, thresh, sigma)
         imwrite(result_img, Create_file_name(file_name, "result"))
     end
 
-    imshow(result_img);
 end

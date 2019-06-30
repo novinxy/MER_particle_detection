@@ -146,22 +146,37 @@ function otsuThreshold_Callback(hObject, eventdata, handles)
 
 % --- Executes on button press in refresh_btn.
 function refresh_btn_Callback(hObject, eventdata, handles)
-    handles = guidata(hObject);
+    h = handles;
+    h = guidata(hObject);
 
-    radius_Callback(@radius_Callback, eventdata, handles);
+    radius_Callback(@radius_Callback, eventdata, h);
 
-    fullPath = GetFullPath(handles.selectedImage, handles.imageStructs);
+    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     
-    radius = Get(handles.radius);
+    radius = Get(h.radius);
     
-    if handles.binarizationFlag.Value
-        BnarizationCallback(handles, fullPath, radius);
+    if h.binarizationFlag.Value
+        result_image = BnarizationCallback(h, fullPath, radius);
 
-    elseif handles.cannyFlag.Value
-        CannyCallback(handles, fullPath, radius);
+    elseif h.cannyFlag.Value
+        result_image = CannyCallback(h, fullPath, radius);
 
-    elseif handles.waterFlag.Value
-        WatershedCallback(handles, fullPath, radius);
+    elseif h.waterFlag.Value
+        result_image = WatershedCallback(h, fullPath, radius);
+    end
+    
+    %         DisplayImage(result_image, h);
+
+    myImage = imread(fullPath);
+    myImage = histeq(myImage);
+    DisplayImage(myImage, h);
+    set(h.display ,'Units','pixels');
+    resizePos = get(h.display ,'Position');
+    result_image = imresize(result_image, [resizePos(3) resizePos(3)]);
+    contours = GetContours(result_image);
+    
+    for index = 1:size(contours, 2)
+        contours(index).Draw(h.display);
     end
 
 
@@ -496,10 +511,10 @@ function saveStepsIMGs_Callback(hObject, eventdata, handles)
 % --- returns full path for file struct
 function path = GetFullPath(fileID, imageStructs)
     parts = strsplit(fileID, ' ');
-    fileName = parts(length(parts));
+    fileName = char(parts(length(parts)));
 
     for ind=1:length(imageStructs)
-        if char(fileName) == imageStructs(ind).name
+        if strcmp(fileName,imageStructs(ind).name)
             path = strcat(imageStructs(ind).folder, '\', imageStructs(ind).name);
             break;
         end
@@ -517,7 +532,7 @@ function DisplayImage(myImage, h)
 
 
 % --- Calls Binarization with correct args
-function BnarizationCallback(h, path, radius)
+function resultImg = BnarizationCallback(h, path, radius)
     saveImgsflag = h.saveStepsIMGs.Value;
 
     if h.otsuThreshold.Value == false
@@ -528,11 +543,10 @@ function BnarizationCallback(h, path, radius)
 
     set(h.binThreshValueText, 'String', num2str(otsu));
     set(h.binThreshold, 'Value', otsu);
-    DisplayImage(resultImg, h);
 
 
 % --- Calls Canny with correct args
-function CannyCallback(h, path, radius)
+function resultImg = CannyCallback(h, path, radius)
     saveImgsflag = h.saveStepsIMGs.Value;
 
     [s1, low]   = TryGet(h.lowThresh,  @(low) 0 < low && low < 1, "Incorrect low value, should be: 0 < low < high < 1");
@@ -544,11 +558,10 @@ function CannyCallback(h, path, radius)
     else
         return;
     end
-    DisplayImage(resultImg, h);
 
 
 % --- Calls Watershed with correct args
-function WatershedCallback(h, path, radius)
+function resultImg = WatershedCallback(h, path, radius)
     saveImgsflag = h.saveStepsIMGs.Value;
 
     [s1, sharp_radius]    = TryGet(h.sharpRadius,          @(radius) radius > 0, "Sharpen Radius should be bigger than zero: radius > 0");
@@ -564,7 +577,6 @@ function WatershedCallback(h, path, radius)
     else
         return;
     end
-    DisplayImage(resultImg, h);
 
 
 % --- Returns double value from handle
