@@ -147,7 +147,6 @@ function otsuThreshold_Callback(hObject, eventdata, handles)
 % --- Executes on button press in refresh_btn.
 function refresh_btn_Callback(hObject, eventdata, handles)
     h = handles;
-    h = guidata(hObject);
 
     radius_Callback(@radius_Callback, eventdata, h);
 
@@ -173,8 +172,7 @@ function refresh_btn_Callback(hObject, eventdata, handles)
         DisplayImage(myImage, h);
     end
 
-    result_image = FitToAxes(result_image, h);
-    contours = GetContours(result_image);
+    contours = GetContours(result_image, h);
     
     for index = 1:size(contours, 2)
         contours(index).Draw(h.display);
@@ -610,6 +608,51 @@ function [success, value] = TryGet(handle, predicate, errMsg)
     end
 
 
+% --- Returns countourData vector from image
+function contours = GetContours(image, h)
+    [origMatrix] = contourc(double(image), 1);
 
+    image = FitToAxes(image, h);
+    [matrix] = contourc(double(image), 1);
+
+    index = 0;
+    i = 1;
+    length = size(matrix, 2);
+    indexes(1) = matrix(2, 1);
+
+    contours(1) = ContourData([matrix(1, 2 : indexes(1) + 1); matrix(2, 2 : indexes(1) + 1)], [origMatrix(1, 2 : indexes(1) + 1); origMatrix(2, 2 : indexes(1) + 1)]);
+    while index + indexes(i) + i < length
+        index = index + indexes(i);
+        i = i + 1;
+        indexes(i) = matrix(2, index + i);
+        
+        contours(i) = ContourData([matrix(1, index + i + 1 : index + indexes(i) + i); matrix(2, index + i + 1 : index + indexes(i) + i)], [origMatrix(1, index + i + 1 : index + indexes(i) + i); origMatrix(2, index + i + 1 : index + indexes(i) + i)]);
+    end
+
+    
+
+    
+
+function points = GetPoints(matrix)
+    indexes = GetIndexes(matrix);
+
+    for i = 1 : size(indexes, 2) - 1
+        BEGIN = indexes(i) + i + 1;
+        END = indexes(i) + indexes(i + 1) + i;
+        points(i).Data = [matrix(1, BEGIN : END); matrix(2, BEGIN : END)];
+    end
+
+
+function indexes = GetIndexes(matrix)
+    index = 0;
+    i = 1;
+    length = size(matrix, 2);
+    indexes(1) = matrix(2, 1);
+
+    while index + indexes(i) + i < length
+        index = index + indexes(i);
+        i = i + 1;
+        indexes(i) = matrix(2, index + i);
+    end
 
 

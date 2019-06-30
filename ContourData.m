@@ -1,6 +1,9 @@
 classdef ContourData
     properties
+        ScaledPoints
         Points
+        scaledXX
+        scaledYY
         XX
         YY
         Area
@@ -10,10 +13,13 @@ classdef ContourData
     end
     
     methods
-        function obj = ContourData(points)
-            obj.Points = points;
-            obj.XX = points(1,:);
-            obj.YY = points(2,:);
+        function obj = ContourData(scaledPoints, Points)
+            obj.ScaledPoints = scaledPoints;
+            obj.scaledXX = scaledPoints(1,:);
+            obj.scaledYY = scaledPoints(2,:);
+            obj.Points = Points;
+            obj.XX = Points(1,:);
+            obj.YY = Points(2,:);
             obj.Shape = polyshape(obj.XX, obj.YY);
             obj.Area = area(obj.Shape);
             obj.Perimeter = perimeter(obj.Shape);
@@ -23,7 +29,7 @@ classdef ContourData
         
         function Draw(obj, axes)
             hold on;
-            plot(axes, obj.XX, obj.YY, 'r','LineWidth',2);
+            plot(axes, obj.scaledXX, obj.scaledYY, 'r','LineWidth',2);
         end
 
     end
