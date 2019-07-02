@@ -105,6 +105,18 @@ function result_img = Watershed(file_name, log, open_radius, sharpen_radius, thr
 
     % deleting border objects
     result_img = imclearborder(binary_img);
+
+    % cleaning garbage
+    disk_kernel = Disk_kernel(7);
+    result_img = imopen(result_img, disk_kernel);
+
+    if isa(opening_img, 'uint8')
+        result_img = uint8(255 * result_img);
+    else
+        result_img = uint16(65535 * result_img);
+    end
+    result_img = imfill(result_img);
+
     if log == true
         imwrite(result_img, Create_file_name(file_name, "result"));
     end

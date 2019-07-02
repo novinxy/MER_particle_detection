@@ -44,11 +44,6 @@ function varargout = bin_ui(varargin)
     % End initialization code - DO NOT EDIT
 
 % --- Executes just before bin_ui is made visible.
-% This function has no output args, see OutputFcn.
-% hObject    handle to figure
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to bin_ui (see VARARGIN)
 function bin_ui_OpeningFcn(hObject, eventdata, handles, varargin)
     handles = guidata(hObject);
     h = handles;
@@ -95,46 +90,103 @@ function bin_ui_OpeningFcn(hObject, eventdata, handles, varargin)
     % Update handles structure
     guidata(hObject, h);
 
-    % UIWAIT makes main wait for user response (see UIRESUME)
-    % uiwait(handles.figure1);
 
 
 % --- Outputs from this function are returned to the command line.
-% varargout  cell array for returning output args (see VARARGOUT);
-% hObject    handle to figure
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Get default command line output from handles structure
 function varargout = bin_ui_OutputFcn(hObject, eventdata, handles) 
     varargout{1} = handles.output;
 
 
-% hObject    handle to radius (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hints: get(hObject,'String') returns contents of radius as text
-%        str2double(get(hObject,'String')) returns contents of radius as a double
-function radius_Callback(hObject, eventdata, handles)
-    set(handles.radius, 'String', str2double(get(handles.radius,'String')));
+    % --- Executes during object creation, after setting all properties.
+function imagesPopupmenu_CreateFcn(hObject, eventdata, handles)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
 
 
 % --- Executes during object creation, after setting all properties.
-% hObject    handle to radius (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
+function gaussSigmaValue_CreateFcn(hObject, eventdata, handles)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+
+
+% --- Executes during object creation, after setting all properties.
+function filterValue_CreateFcn(hObject, eventdata, handles)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+
+% --- Executes during object creation, after setting all properties.
+function waterLowThreshValue_CreateFcn(hObject, eventdata, handles)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+
+
+% --- Executes during object creation, after setting all properties.
+function waterHighThreshValue_CreateFcn(hObject, eventdata, handles)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+
+
+% --- Executes during object creation, after setting all properties.
+function sharpRadius_CreateFcn(hObject, eventdata, handles)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+
+
+% --- Executes during object creation, after setting all properties.
+function binThreshold_CreateFcn(hObject, eventdata, handles)
+    if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject, 'BackgroundColor', [.9 .9 .9]);
+    end
+
+
+% --- Executes during object creation, after setting all properties.
+function sigmaValue_CreateFcn(hObject, eventdata, handles)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+
+    
+% --- Executes during object creation, after setting all properties.
+function waterSigmaValue_CreateFcn(hObject, eventdata, handles)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+
+
+% --- Executes during object creation, after setting all properties.
+function gradientThreshValue_CreateFcn(hObject, eventdata, handles)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+
+
+% --- Executes during object creation, after setting all properties.
 function radius_CreateFcn(hObject, eventdata, handles)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
 
 
+% --- Executes during object creation, after setting all properties.
+function lowThresh_CreateFcn(hObject, eventdata, handles)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+
+
+% --- Executes during object creation, after setting all properties.
+function highThresh_CreateFcn(hObject, eventdata, handles)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+
 % --- Executes on button press in otsuThreshold.
-% hObject    handle to otsuThreshold (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hint: get(hObject,'Value') returns toggle state of otsuThreshold
 function otsuThreshold_Callback(hObject, eventdata, handles)
     flag = get(hObject, 'Value');
     if flag == true
@@ -145,10 +197,7 @@ function otsuThreshold_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on button press in refresh_btn.
-function refresh_btn_Callback(hObject, eventdata, handles)
-    h = handles;
-
-    radius_Callback(@radius_Callback, eventdata, h);
+function refresh_btn_Callback(hObject, eventdata, h)
 
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     
@@ -172,23 +221,13 @@ function refresh_btn_Callback(hObject, eventdata, handles)
         DisplayImage(myImage, h);
     end
 
-    contours = GetContours(result_image, h);
-    stats = GetStats(result_image);
+    result_image = bwareaopen(result_image, 200);
 
-    CalculateParams(stats, contours, handles);
+    DisplayContours(result_image, h);
+    CalculateParams(result_image, h);
     
-    for index = 1:size(contours, 2)
-        contours(index).Draw(h.display);
-    end
-    
-    
-
 
 % --- Executes on button press in binarizationFlag.
-% hObject    handle to binarizationFlag (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hint: get(hObject,'Value') returns toggle state of binarizationFlag
 function binarizationFlag_Callback(hObject, eventdata, handles)
     flag_value = handles.binarizationFlag.Value;
     if flag_value == true
@@ -206,10 +245,6 @@ function binarizationFlag_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on button press in cannyFlag.
-% hObject    handle to cannyFlag (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hint: get(hObject,'Value') returns toggle state of cannyFlag    flag_value = get(hObject, 'Value');
 function cannyFlag_Callback(hObject, eventdata, handles)
     flag_value = handles.cannyFlag.Value;
     if flag_value == true
@@ -227,10 +262,6 @@ function cannyFlag_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on button press in waterFlag.
-% hObject    handle to waterFlag (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hint: get(hObject,'Value') returns toggle state of waterFlag
 function waterFlag_Callback(hObject, eventdata, handles)
     flag_value = handles.waterFlag.Value;
     if flag_value == true
@@ -248,52 +279,7 @@ function waterFlag_Callback(hObject, eventdata, handles)
     end
 
 
-% hObject    handle to lowThresh (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hints: get(hObject,'String') returns contents of lowThresh as text
-%        str2double(get(hObject,'String')) returns contents of lowThresh as a double
-function lowThresh_Callback(hObject, eventdata, handles)
-
-
-% --- Executes during object creation, after setting all properties.
-% hObject    handle to lowThresh (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-function lowThresh_CreateFcn(hObject, eventdata, handles)
-    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
-    end
-
-
-% hObject    handle to highThresh (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hints: get(hObject,'String') returns contents of highThresh as text
-%        str2double(get(hObject,'String')) returns contents of highThresh as a double
-function highThresh_Callback(hObject, eventdata, handles)
-
-
-% --- Executes during object creation, after setting all properties.
-% hObject    handle to highThresh (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-function highThresh_CreateFcn(hObject, eventdata, handles)
-    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
-    end
-
-
 % --- Executes on selection change in imagesPopupmenu.
-% hObject    handle to imagesPopupmenu (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% h         short for handles - structure with handles and user data (see GUIDATA)
-% Hints: contents = cellstr(get(hObject,'String')) returns imagesPopupmenu contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from imagesPopupmenu
 function imagesPopupmenu_Callback(hObject, eventdata, h)
     h = guidata(hObject);
     contents = cellstr(get(h.imagesPopupmenu,'String'));
@@ -306,215 +292,11 @@ function imagesPopupmenu_Callback(hObject, eventdata, h)
     guidata(hObject, h);
 
 
-% --- Executes during object creation, after setting all properties.
-% hObject    handle to imagesPopupmenu (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-function imagesPopupmenu_CreateFcn(hObject, eventdata, handles)
-    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
-    end
-
-
 % --- Executes on slider movement.
-% hObject    handle to binThreshold (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hints: get(hObject,'Value') returns position of slider
-%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
 function binThreshold_Callback(hObject, eventdata, handles)
     handles = guidata(hObject);
     sliderValue = get(handles.binThreshold,'Value');
     set(handles.binThreshValueText,'String', num2str(sliderValue));
-
-    
-% --- Executes during object creation, after setting all properties.
-% hObject    handle to binThreshold (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-% Hint: slider controls usually have a light gray background.
-function binThreshold_CreateFcn(hObject, eventdata, handles)
-    if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject, 'BackgroundColor', [.9 .9 .9]);
-    end
-
-
-% hObject    handle to sigmaValue (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hints: get(hObject,'String') returns contents of sigmaValue as text
-%        str2double(get(hObject,'String')) returns contents of sigmaValue as a double
-function sigmaValue_Callback(hObject, eventdata, handles)
-
-
-% --- Executes during object creation, after setting all properties.
-% hObject    handle to sigmaValue (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-function sigmaValue_CreateFcn(hObject, eventdata, handles)
-    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
-    end
-
-
-% hObject    handle to waterSigmaValue (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hints: get(hObject,'String') returns contents of waterSigmaValue as text
-%        str2double(get(hObject,'String')) returns contents of waterSigmaValue as a double
-function waterSigmaValue_Callback(hObject, eventdata, handles)
-
-    
-% --- Executes during object creation, after setting all properties.
-% hObject    handle to waterSigmaValue (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-function waterSigmaValue_CreateFcn(hObject, eventdata, handles)
-    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
-    end
-
-
-% hObject    handle to gradientThreshValue (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hints: get(hObject,'String') returns contents of gradientThreshValue as text
-%        str2double(get(hObject,'String')) returns contents of gradientThreshValue as a double
-function gradientThreshValue_Callback(hObject, eventdata, handles)
-
-
-% --- Executes during object creation, after setting all properties.
-% hObject    handle to gradientThreshValue (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-function gradientThreshValue_CreateFcn(hObject, eventdata, handles)
-    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
-    end
-
-
-% hObject    handle to gaussSigmaValue (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hints: get(hObject,'String') returns contents of gaussSigmaValue as text
-%        str2double(get(hObject,'String')) returns contents of gaussSigmaValue as a double
-function gaussSigmaValue_Callback(hObject, eventdata, handles)
-
-
-% --- Executes during object creation, after setting all properties.
-% hObject    handle to gaussSigmaValue (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-function gaussSigmaValue_CreateFcn(hObject, eventdata, handles)
-    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
-    end
-
-
-% hObject    handle to filterValue (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hints: get(hObject,'String') returns contents of filterValue as text
-%        str2double(get(hObject,'String')) returns contents of filterValue as a double
-function filterValue_Callback(hObject, eventdata, handles)
-
-
-% --- Executes during object creation, after setting all properties.
-% hObject    handle to filterValue (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-function filterValue_CreateFcn(hObject, eventdata, handles)
-    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
-    end
-
-
-% hObject    handle to waterLowThreshValue (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hints: get(hObject,'String') returns contents of waterLowThreshValue as text
-%        str2double(get(hObject,'String')) returns contents of waterLowThreshValue as a double
-function waterLowThreshValue_Callback(hObject, eventdata, handles)
-
-
-% --- Executes during object creation, after setting all properties.
-% hObject    handle to waterLowThreshValue (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-function waterLowThreshValue_CreateFcn(hObject, eventdata, handles)
-    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
-    end
-
-
-% hObject    handle to waterHighThreshValue (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hints: get(hObject,'String') returns contents of waterHighThreshValue as text
-%        str2double(get(hObject,'String')) returns contents of waterHighThreshValue as a double
-function waterHighThreshValue_Callback(hObject, eventdata, handles)
-
-
-% --- Executes during object creation, after setting all properties.
-% hObject    handle to waterHighThreshValue (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-function waterHighThreshValue_CreateFcn(hObject, eventdata, handles)
-    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
-    end
-
-
-% hObject    handle to sharpRadius (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hints: get(hObject,'String') returns contents of sharpRadius as text
-%        str2double(get(hObject,'String')) returns contents of sharpRadius as a double
-function sharpRadius_Callback(hObject, eventdata, handles)
-
-
-% --- Executes during object creation, after setting all properties.
-% hObject    handle to sharpRadius (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-function sharpRadius_CreateFcn(hObject, eventdata, handles)
-    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
-    end
-
-% --- Executes on button press in saveStepsIMGs.
-% hObject    handle to saveStepsIMGs (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hint: get(hObject,'Value') returns toggle state of saveStepsIMGs
-function saveStepsIMGs_Callback(hObject, eventdata, handles)
- 
-
-% --- Executes on button press in showOriginal.
-% hObject    handle to showOriginal (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hint: get(hObject,'Value') returns toggle state of showOriginal    
-function showOriginal_Callback(hObject, eventdata, handles)
-
 
 
 % --- CUSTOM FUNCTIONS ---
@@ -613,60 +395,56 @@ function [success, value] = TryGet(handle, predicate, errMsg)
     end
 
 
-% --- Returns countourData vector from image
-function contours = GetContours(image, h)
-    [origMatrix] = contourc(double(image), 1);
-
-    image = FitToAxes(image, h);
-    [matrix] = contourc(double(image), 1);
-
-    index = 0;
-    i = 1;
-    length = size(matrix, 2);
-    indexes(1) = matrix(2, 1);
-
-    contours(1) = ContourData([matrix(1, 2 : indexes(1) + 1); matrix(2, 2 : indexes(1) + 1)], [origMatrix(1, 2 : indexes(1) + 1); origMatrix(2, 2 : indexes(1) + 1)]);
-    while index + indexes(i) + i < length
-        index = index + indexes(i);
-        i = i + 1;
-        indexes(i) = matrix(2, index + i);
-        
-        contours(i) = ContourData([matrix(1, index + i + 1 : index + indexes(i) + i); matrix(2, index + i + 1 : index + indexes(i) + i)], [origMatrix(1, index + i + 1 : index + indexes(i) + i); origMatrix(2, index + i + 1 : index + indexes(i) + i)]);
+% --- Displays contours on scaled image
+function DisplayContours(image, h)
+    hold on;
+    dispalyImage = FitToAxes(image, h);
+    [B, L] = bwboundaries(dispalyImage,'noholes');
+    for k = 1:length(B)
+        boundary = B{k};
+        plot(boundary(:,2),boundary(:,1),'r','LineWidth',2)
     end
+    
 
-    
-function stats = GetStats(image)
-    binaryImage = image~= 0;
-    labeledImage = bwlabel(binaryImage); 
-    stats = regionprops(labeledImage, 'MajorAxisLength', ...
-    'MinorAxisLength', 'Area', 'Circularity', 'Perimeter');
-    
-function CalculateParams(stats, contours, handles)
+% --- calculates contours parameters from image
+function CalculateParams(image, handles)
+    [B, L] = bwboundaries(image,'noholes');
+    stats = regionprops(L,'Area','Centroid', 'MinorAxisLength', 'MajorAxisLength');
+
     set(handles.grainsNumberValue, 'String', size(stats, 1));
 
     % diameters
-    table = transpose([stats.MajorAxisLength ;stats.MinorAxisLength]);
-    diameters = mean(table,2);
-    diameterMedian = median(diameters);
-    diameterMean = mean(diameters);
-    diameterSTD = std(diameters);
+    diameters = mean(transpose([stats.MajorAxisLength ;stats.MinorAxisLength]),2);
+    diametersTable = [median(diameters) mean(diameters) std(diameters)];
 
     % short axis
-    shortMedian = median([stats.MinorAxisLength]);
-    shortMean = mean([stats.MinorAxisLength]);
-    shortSTD = std([stats.MinorAxisLength]);
+    shortAxisTable = [median([stats.MinorAxisLength]) mean([stats.MinorAxisLength]) std([stats.MinorAxisLength])];
     
     % long axis
-    longMedian = median([stats.MajorAxisLength]);
-    longMean = mean([stats.MajorAxisLength]);
-    longSTD = std([stats.MajorAxisLength]);
+    longAxisTable = [median([stats.MajorAxisLength]) mean([stats.MajorAxisLength]) std([stats.MajorAxisLength])];
 
     % Circularity   
-    cirr = (4*(pi*[stats.Area]))./([stats.Perimeter] .^2 );
-    cirMedian = median([contours.Circularity]);
-    cirMean = mean([contours.Circularity]);
-    cirSTD = std([contours.Circularity]);
+    for k = 1:length(B)
 
-    
-    info = [diameterMedian, diameterMean, diameterSTD; shortMedian shortMean shortSTD; longMedian longMean longSTD ; cirMedian cirMean cirSTD];
+        % obtain (X,Y) boundary coordinates corresponding to label 'k'
+        boundary = B{k};
+        
+        % compute a simple estimate of the object's perimeter
+        delta_sq = diff(boundary).^2;    
+        perimeter = sum(sqrt(sum(delta_sq,2)));
+        
+        % obtain the area calculation corresponding to label 'k'
+        area = stats(k).Area;
+        
+        % compute the roundness metric
+        circularity(k) = 4*pi*area/perimeter^2;
+    end
+
+    circularityTable = [median(circularity) mean(circularity) std(circularity)];
+
+    % aspect ratio
+    ratios = [stats.MinorAxisLength]./[stats.MajorAxisLength];
+    ratioTable = [median(ratios) mean(ratios) std(ratios)];
+
+    info = [diametersTable; shortAxisTable; longAxisTable; circularityTable; ratioTable];
     set(handles.tablePixels, 'Data',  info);
