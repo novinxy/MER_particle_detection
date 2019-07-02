@@ -21,7 +21,7 @@
 
 % Edit the above text to modify the response to help bin_ui
 
-% Last Modified by GUIDE v2.5 30-Jun-2019 19:29:17
+% Last Modified by GUIDE v2.5 01-Jul-2019 22:29:01
 
 % Begin initialization code - DO NOT EDIT
 function varargout = bin_ui(varargin)
@@ -173,10 +173,15 @@ function refresh_btn_Callback(hObject, eventdata, handles)
     end
 
     contours = GetContours(result_image, h);
+    stats = GetStats(result_image);
+
+    CalculateParams(stats, contours, handles);
     
     for index = 1:size(contours, 2)
         contours(index).Draw(h.display);
     end
+    
+    
 
 
 % --- Executes on button press in binarizationFlag.
@@ -630,29 +635,38 @@ function contours = GetContours(image, h)
     end
 
     
+function stats = GetStats(image)
+    binaryImage = image~= 0;
+    labeledImage = bwlabel(binaryImage); 
+    stats = regionprops(labeledImage, 'MajorAxisLength', ...
+    'MinorAxisLength', 'Area', 'Circularity', 'Perimeter');
+    
+function CalculateParams(stats, contours, handles)
+    set(handles.grainsNumberValue, 'String', size(stats, 1));
+
+    % diameters
+    table = transpose([stats.MajorAxisLength ;stats.MinorAxisLength]);
+    diameters = mean(table,2);
+    diameterMedian = median(diameters);
+    diameterMean = mean(diameters);
+    diameterSTD = std(diameters);
+
+    % short axis
+    shortMedian = median([stats.MinorAxisLength]);
+    shortMean = mean([stats.MinorAxisLength]);
+    shortSTD = std([stats.MinorAxisLength]);
+    
+    % long axis
+    longMedian = median([stats.MajorAxisLength]);
+    longMean = mean([stats.MajorAxisLength]);
+    longSTD = std([stats.MajorAxisLength]);
+
+    % Circularity   
+    cirr = (4*(pi*[stats.Area]))./([stats.Perimeter] .^2 );
+    cirMedian = median([contours.Circularity]);
+    cirMean = mean([contours.Circularity]);
+    cirSTD = std([contours.Circularity]);
 
     
-
-function points = GetPoints(matrix)
-    indexes = GetIndexes(matrix);
-
-    for i = 1 : size(indexes, 2) - 1
-        BEGIN = indexes(i) + i + 1;
-        END = indexes(i) + indexes(i + 1) + i;
-        points(i).Data = [matrix(1, BEGIN : END); matrix(2, BEGIN : END)];
-    end
-
-
-function indexes = GetIndexes(matrix)
-    index = 0;
-    i = 1;
-    length = size(matrix, 2);
-    indexes(1) = matrix(2, 1);
-
-    while index + indexes(i) + i < length
-        index = index + indexes(i);
-        i = i + 1;
-        indexes(i) = matrix(2, index + i);
-    end
-
-
+    info = [diameterMedian, diameterMean, diameterSTD; shortMedian shortMean shortSTD; longMedian longMean longSTD ; cirMedian cirMean cirSTD];
+    set(handles.tablePixels, 'Data',  info);
