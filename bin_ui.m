@@ -45,7 +45,6 @@ function varargout = bin_ui(varargin)
 
 % --- Executes just before bin_ui is made visible.
 function bin_ui_OpeningFcn(hObject, eventdata, handles, varargin)
-    handles = guidata(hObject);
     h = handles;
 
     set(h.binarizationFlag, 'Value', true);
@@ -93,101 +92,104 @@ function bin_ui_OpeningFcn(hObject, eventdata, handles, varargin)
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = bin_ui_OutputFcn(hObject, eventdata, handles) 
+function varargout = bin_ui_OutputFcn(~, ~, handles) 
     varargout{1} = handles.output;
 
 
     % --- Executes during object creation, after setting all properties.
-function imagesPopupmenu_CreateFcn(hObject, eventdata, handles)
+function imagesPopupmenu_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
 
 
 % --- Executes during object creation, after setting all properties.
-function gaussSigmaValue_CreateFcn(hObject, eventdata, handles)
+function gaussSigmaValue_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
 
 
 % --- Executes during object creation, after setting all properties.
-function filterValue_CreateFcn(hObject, eventdata, handles)
+function filterValue_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
 
 % --- Executes during object creation, after setting all properties.
-function waterLowThreshValue_CreateFcn(hObject, eventdata, handles)
-    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-        set(hObject,'BackgroundColor','white');
-    end
-
-
-% --- Executes during object creation, after setting all properties.
-function waterHighThreshValue_CreateFcn(hObject, eventdata, handles)
+function waterLowThreshValue_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
 
 
 % --- Executes during object creation, after setting all properties.
-function sharpRadius_CreateFcn(hObject, eventdata, handles)
+function waterHighThreshValue_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
 
 
 % --- Executes during object creation, after setting all properties.
-function binThreshold_CreateFcn(hObject, eventdata, handles)
+function sharpRadius_CreateFcn(hObject, ~, ~)
+    if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+        set(hObject,'BackgroundColor','white');
+    end
+
+
+% --- Executes during object creation, after setting all properties.
+function binThreshold_CreateFcn(hObject, ~, ~)
     if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject, 'BackgroundColor', [.9 .9 .9]);
     end
 
 
 % --- Executes during object creation, after setting all properties.
-function sigmaValue_CreateFcn(hObject, eventdata, handles)
+function sigmaValue_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
 
     
 % --- Executes during object creation, after setting all properties.
-function waterSigmaValue_CreateFcn(hObject, eventdata, handles)
+function waterSigmaValue_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
 
 
 % --- Executes during object creation, after setting all properties.
-function gradientThreshValue_CreateFcn(hObject, eventdata, handles)
+function gradientThreshValue_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
 
 
 % --- Executes during object creation, after setting all properties.
-function radius_CreateFcn(hObject, eventdata, handles)
+function radius_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
 
 
 % --- Executes during object creation, after setting all properties.
-function lowThresh_CreateFcn(hObject, eventdata, handles)
+function lowThresh_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
 
 
 % --- Executes during object creation, after setting all properties.
-function highThresh_CreateFcn(hObject, eventdata, handles)
+function highThresh_CreateFcn(hObject, ~, ~)
     if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
         set(hObject,'BackgroundColor','white');
     end
+
+function radius_Callback(hObject, eventdata, handles)		
+    set(handles.radius, 'String', str2double(get(handles.radius,'String')));
 
 % --- Executes on button press in otsuThreshold.
-function otsuThreshold_Callback(hObject, eventdata, handles)
+function otsuThreshold_Callback(hObject, ~, handles)
     flag = get(hObject, 'Value');
     if flag == true
         set(handles.binThreshold, 'enable', 'off')
@@ -195,9 +197,28 @@ function otsuThreshold_Callback(hObject, eventdata, handles)
         set(handles.binThreshold, 'enable', 'on')
     end
 
+function lowThresh_Callback(hObject, eventdata, handles)		
+function highThresh_Callback(hObject, eventdata, handles)		
+function sigmaValue_Callback(hObject, eventdata, handles)		
+function waterSigmaValue_Callback(hObject, eventdata, handles)
+function gradientThreshValue_Callback(hObject, eventdata, handles)		
+function gaussSigmaValue_Callback(hObject, eventdata, handles)		
+function filterValue_Callback(hObject, eventdata, handles)		
+function waterLowThreshValue_Callback(hObject, eventdata, handles)		
+function sharpRadius_Callback(hObject, eventdata, handles)		
+function saveStepsIMGs_Callback(hObject, eventdata, handles)		
+function showOriginal_Callback(hObject, eventdata, handles)
+function waterHighThreshValue_Callback(hObject, eventdata, handles)		
+
+
+
+
+
 
 % --- Executes on button press in refresh_btn.
-function refresh_btn_Callback(hObject, eventdata, h)
+function refresh_btn_Callback(~, eventdata, h)
+
+    radius_Callback(@radius_Callback, eventdata, h);
 
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     
@@ -225,10 +246,15 @@ function refresh_btn_Callback(hObject, eventdata, h)
 
     DisplayContours(result_image, h);
     CalculateParams(result_image, h);
+
+    F = getframe(h.display);
+    Image = frame2im(F);
+    CreateDictionary(fullPath);
+    imwrite(Image, Create_file_name(fullPath, "display"));
     
 
 % --- Executes on button press in binarizationFlag.
-function binarizationFlag_Callback(hObject, eventdata, handles)
+function binarizationFlag_Callback(~, ~, handles)
     flag_value = handles.binarizationFlag.Value;
     if flag_value == true
         set(handles.lowThresh, 'enable', 'off');
@@ -245,7 +271,7 @@ function binarizationFlag_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on button press in cannyFlag.
-function cannyFlag_Callback(hObject, eventdata, handles)
+function cannyFlag_Callback(~, ~, handles)
     flag_value = handles.cannyFlag.Value;
     if flag_value == true
         set(handles.lowThresh, 'enable', 'on');
@@ -262,7 +288,7 @@ function cannyFlag_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on button press in waterFlag.
-function waterFlag_Callback(hObject, eventdata, handles)
+function waterFlag_Callback(~, ~, handles)
     flag_value = handles.waterFlag.Value;
     if flag_value == true
         set(handles.lowThresh, 'enable', 'off');
@@ -280,7 +306,7 @@ function waterFlag_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on selection change in imagesPopupmenu.
-function imagesPopupmenu_Callback(hObject, eventdata, h)
+function imagesPopupmenu_Callback(hObject, ~, ~)
     h = guidata(hObject);
     contents = cellstr(get(h.imagesPopupmenu,'String'));
     h.selectedImage = contents{get(h.imagesPopupmenu, 'Value')};
@@ -293,7 +319,7 @@ function imagesPopupmenu_Callback(hObject, eventdata, h)
 
 
 % --- Executes on slider movement.
-function binThreshold_Callback(hObject, eventdata, handles)
+function binThreshold_Callback(hObject, ~, ~)
     handles = guidata(hObject);
     sliderValue = get(handles.binThreshold,'Value');
     set(handles.binThreshValueText,'String', num2str(sliderValue));
@@ -399,7 +425,7 @@ function [success, value] = TryGet(handle, predicate, errMsg)
 function DisplayContours(image, h)
     hold on;
     dispalyImage = FitToAxes(image, h);
-    [B, L] = bwboundaries(dispalyImage,'noholes');
+    [B, ~] = bwboundaries(dispalyImage,'noholes');
     for k = 1:length(B)
         boundary = B{k};
         plot(boundary(:,2),boundary(:,1),'r','LineWidth',2)

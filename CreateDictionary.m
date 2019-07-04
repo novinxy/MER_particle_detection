@@ -1,4 +1,4 @@
-function [result_file_name] = Create_file_name(file_name, suffix)
+function CreateDictionary(file_name)
 
     splits2 = split(file_name, '/');
     
@@ -7,16 +7,15 @@ function [result_file_name] = Create_file_name(file_name, suffix)
     end
     
     name = splits2(1);
-    
-    for i = 2 : length(splits2)
+    len = length(splits2);
+    for i = 2 : len - 1
         if splits2(i) == "Images"
             name = name + "\" + 'Results';    
         else
             name = name + "\" + splits2(i);
         end
     end
-    
-    splits = split(name, '.');
-    result_file_name = splits(1) + "_" + suffix + ".png";
+    if ~exist(name, 'dir')
+       mkdir(name);
+    end
 end
-
