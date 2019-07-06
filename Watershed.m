@@ -40,7 +40,7 @@ function result_img = Watershed(file_name, log, open_radius, sharpen_radius, thr
         end
 
         % gradient filtering
-        [gmag, gdir] = imgradient(added_img);
+        [gmag, ~] = imgradient(added_img);
         gradient_img = gmag > gradient_threshold;
         if log == true
             imwrite(gradient_img, Create_file_name(file_name, "gradient"));
