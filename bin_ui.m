@@ -76,6 +76,7 @@ function OtsuFlag_Callback(hObject, ~, h)
 
 % --- Executes on button press in refreshBtn.
 function RefreshBtn_Callback(hObject, h)
+    h = guidata(hObject);
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     
     radius = Get(h.radiusVal);
@@ -112,29 +113,8 @@ function RefreshBtn_Callback(hObject, h)
     imwrite(Image, Create_file_name(fullPath, "display"));
 
     WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
+    guidata(hObject, h);
 
-
-function WriteDataToFile(hObject, dataTypes)
-    h = guidata(hObject);
-
-    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-    splited = split(Create_file_name(fullPath, "data"), '.');
-    fileName = splited(1) + ".txt";
-    file = fopen(fileName, 'wt');
-
-    fprintf(file, 'Number of grains: %g\n', h.Params.Number);
-    fprintf(file, '\nIn pixels:\n');
-    dataMatrix = [h.Params.Diameter; h.Params.ShortAxis; h.Params.LongAxis; h.Params.Circularity; h.Params.Ratio];
-    for i = 1 : size(dataMatrix, 1)
-        data = dataMatrix(i,:);
-        fprintf(file, '%s:\n', dataTypes(i));
-        fprintf(file, '\tMedian: %g\n', data(1));
-        fprintf(file, '\tMean: %g\n', data(2));
-        fprintf(file, '\tStandard devation: %g\n', data(3));     
-        fprintf(file, '\n');
-    end
-    fclose(file);
-    
 
 % --- Executes on button press in binarizationFlag.
 function BinarizationFlag_Callback(h)
@@ -189,14 +169,16 @@ function WaterFlag_Callback(h)
 
 
 % --- Executes on selection change in imagesList.
-function ImagesList_Callback(h)
+function ImagesList_Callback(hObject, h)
+    h = guidata(hObject);
     contents = cellstr(get(h.imagesList,'String'));
     h.selectedImage = contents{get(h.imagesList, 'Value')};
-
+    
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     myImage = imread(fullPath);
     myImage = histeq(myImage);
     DisplayImage(myImage, h);
+    guidata(hObject, h);
 
 
 % --- Executes on slider movement.
@@ -306,7 +288,7 @@ function DisplayContours(image, h)
     end
     
 
-% --- calculates contours parameters from image
+% --- calculates contours/grains parameters from image
 function CalculateParams(img,  hObject)
     h = guidata(hObject);
     [B, L] = bwboundaries(img,'noholes');
@@ -353,9 +335,52 @@ function CalculateParams(img,  hObject)
     h.Params.Ratio = ratioTable;
     guidata(hObject, h);
 
+
+% --- displays data about detected grains
 function DisplayData(hObject)
     h = guidata(hObject);
     set(h.grainsNumVal, 'String', h.Params.Number);
     info = [h.Params.Diameter; h.Params.ShortAxis; h.Params.LongAxis; h.Params.Circularity; h.Params.Ratio];
     
     set(h.tablePixels, 'Data',  info);
+
+
+% --- converts Pixels to MMs, value can be scalar or matrix
+function convertedVaue = Pixels2MM(value)
+    scale = 0.034;
+    convertedVaue = value.* scale;
+
+
+% --- writes grains data to file
+function WriteDataToFile(hObject, dataTypes)
+    h = guidata(hObject);
+
+    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+    splited = split(Create_file_name(fullPath, "data"), '.');
+    fileName = splited(1) + ".txt";
+    file = fopen(fileName, 'wt');
+
+    fprintf(file, 'Number of grains: %g\n', h.Params.Number);
+    fprintf(file, '\nIn pixels:\n');
+    dataMatrix = [h.Params.Diameter; h.Params.ShortAxis; h.Params.LongAxis; h.Params.Circularity; h.Params.Ratio];
+    for i = 1 : size(dataMatrix, 1)
+        data = dataMatrix(i,:);
+        fprintf(file, '%s:\n', dataTypes(i));
+        fprintf(file, '\tMedian: %g\n', data(1));
+        fprintf(file, '\tMean: %g\n', data(2));
+        fprintf(file, '\tStandard devation: %g\n', data(3));     
+        fprintf(file, '\n');
+    end
+
+    fprintf(file, '\nIn MMs:\n');
+    dataMatrix = [Pixels2MM(h.Params.Diameter); Pixels2MM(h.Params.ShortAxis); Pixels2MM(h.Params.LongAxis); h.Params.Circularity; h.Params.Ratio];
+    for i = 1 : size(dataMatrix, 1)
+        data = dataMatrix(i,:);
+        fprintf(file, '%s:\n', dataTypes(i));
+        fprintf(file, '\tMedian: %g\n', data(1));
+        fprintf(file, '\tMean: %g\n', data(2));
+        fprintf(file, '\tStandard devation: %g\n', data(3));     
+        fprintf(file, '\n');
+    end
+
+    fclose(file);
