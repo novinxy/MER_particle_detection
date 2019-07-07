@@ -20,6 +20,10 @@ function varargout = bin_ui(varargin)
 
 % --- Executes just before bin_ui is made visible.
 function bin_ui_OpeningFcn(hObject, ~, h, varargin)
+    h.metricFlag.Value = false;
+    set(h.pixelsPanel, 'Visible', 'on');
+    set(h.metricsPanel, 'Visible', 'off');
+
     set(h.binarizationFlag, 'Value', true);
     BinarizationFlag_Callback(h);
 
@@ -340,9 +344,12 @@ function CalculateParams(img,  hObject)
 function DisplayData(hObject)
     h = guidata(hObject);
     set(h.grainsNumVal, 'String', h.Params.Number);
-    info = [h.Params.Diameter; h.Params.ShortAxis; h.Params.LongAxis; h.Params.Circularity; h.Params.Ratio];
-    
-    set(h.tablePixels, 'Data',  info);
+
+    infoPixels = [h.Params.Diameter; h.Params.ShortAxis; h.Params.LongAxis; h.Params.Circularity; h.Params.Ratio];
+    set(h.tablePixels, 'Data',  infoPixels);
+
+    infoMetric = [Pixels2MM(h.Params.Diameter); Pixels2MM(h.Params.ShortAxis); Pixels2MM(h.Params.LongAxis); h.Params.Circularity; h.Params.Ratio];
+    set(h.tableMetrics, 'Data',  infoMetric);
 
 
 % --- converts Pixels to MMs, value can be scalar or matrix
@@ -384,3 +391,22 @@ function WriteDataToFile(hObject, dataTypes)
     end
 
     fclose(file);
+
+
+% --- Executes on button press in metric2PixelToggle.
+function Metric2PixelToggle_Callback(hObject, eventdata, handles)
+    h = guidata(hObject);
+    metric_value = h.metricFlag.Value;
+    if metric_value == true
+        h.metricFlag.Value = false;
+        set(h.pixelsPanel, 'Visible', 'on');
+        set(h.metricsPanel, 'Visible', 'off');
+        set(h.metric2PixelToggle, 'String', 'Metrics');
+    else
+        h.metricFlag.Value = true;
+        set(h.pixelsPanel, 'Visible', 'off');
+        set(h.metricsPanel, 'Visible', 'on');
+        set(h.metric2PixelToggle, 'String', 'Pixels');
+    end
+
+    guidata(hObject, h);
