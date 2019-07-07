@@ -27,6 +27,11 @@ function bin_ui_OpeningFcn(hObject, ~, h, varargin)
     set(h.binarizationFlag, 'Value', true);
     BinarizationFlag_Callback(h);
 
+    axes(h.granulometric);
+    set(h.granulometric.XLabel, 'String', 'Diameter [mm]');
+    set(h.granulometric.YLabel, 'String', 'Cumulative [%]');
+    set(gca,'XLim',[0 2],'YLim',[0 100]);
+
     rootdir = 'Images';
     filelist = dir(fullfile(rootdir, '**\*.*'));  %get list of files and folders in any subfolder
     filelist = filelist(~[filelist.isdir]);  %remove folders from list
@@ -117,7 +122,7 @@ function RefreshBtn_Callback(hObject, h)
     imwrite(Image, Create_file_name(fullPath, "display"));
 
     WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
-    guidata(hObject, h);
+%     guidata(hObject, h);
 
 
 % --- Executes on button press in binarizationFlag.
@@ -337,6 +342,38 @@ function CalculateParams(img,  hObject)
     h.Params.LongAxis = longAxisTable;
     h.Params.Circularity = circularityTable;
     h.Params.Ratio = ratioTable;
+
+
+
+    % -- distribution
+    pd = makedist('Normal');
+    values = sort(Pixels2MM(diameters));
+    y = cdf(pd, sort(Pixels2MM(diameters)));
+
+    axes(h.granulometric);
+    
+    plot(values, y.*100);
+
+    set(h.granulometric.XLabel, 'String', 'Diameter [mm]');
+    set(h.granulometric.YLabel, 'String', 'Cumulative [%]');
+    % set(gca,'XLim',[0 2],'YLim',[0 100]);
+    set(gca,'XLim',[0 2]);
+
+
+    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+    F = getframe(h.granulometric);
+    Image = frame2im(F);
+    CreateDictionary(fullPath);
+    imwrite(Image, Create_file_name(fullPath, "distribution"));
+
+    % f = figure('visible','off');
+    % copyobj(h.granulometric, f);
+    % hgsave(f, 'myFigure.fig');
+
+    % savefig([h.granulometric], Create_file_name(fullPath, "figure"));
+    % saveas(h.granulometric, "myFigure.fig");
+
+
     guidata(hObject, h);
 
 
