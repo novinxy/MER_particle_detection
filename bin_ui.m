@@ -75,7 +75,7 @@ function OtsuFlag_Callback(hObject, ~, h)
 
 
 % --- Executes on button press in refreshBtn.
-function RefreshBtn_Callback(h)
+function RefreshBtn_Callback(hObject, h)
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     
     radius = Get(h.radiusVal);
@@ -101,12 +101,39 @@ function RefreshBtn_Callback(h)
     resultImg = bwareaopen(resultImg, 200);
 
     DisplayContours(resultImg, h);
-    CalculateParams(resultImg, h);
+
+    CalculateParams(resultImg, hObject);
+    DisplayData(hObject);
+
 
     F = getframe(h.display);
     Image = frame2im(F);
     CreateDictionary(fullPath);
     imwrite(Image, Create_file_name(fullPath, "display"));
+
+    WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
+
+
+function WriteDataToFile(hObject, dataTypes)
+    h = guidata(hObject);
+
+    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+    splited = split(Create_file_name(fullPath, "data"), '.');
+    fileName = splited(1) + ".txt";
+    file = fopen(fileName, 'wt');
+
+    fprintf(file, 'Number of grains: %g\n', h.Params.Number);
+    fprintf(file, '\nIn pixels:\n');
+    dataMatrix = [h.Params.Diameter; h.Params.ShortAxis; h.Params.LongAxis; h.Params.Circularity; h.Params.Ratio];
+    for i = 1 : size(dataMatrix, 1)
+        data = dataMatrix(i,:);
+        fprintf(file, '%s:\n', dataTypes(i));
+        fprintf(file, '\tMedian: %g\n', data(1));
+        fprintf(file, '\tMean: %g\n', data(2));
+        fprintf(file, '\tStandard devation: %g\n', data(3));     
+        fprintf(file, '\n');
+    end
+    fclose(file);
     
 
 % --- Executes on button press in binarizationFlag.
@@ -280,25 +307,24 @@ function DisplayContours(image, h)
     
 
 % --- calculates contours parameters from image
-function info = CalculateParams(img, h)
+function CalculateParams(img,  hObject)
+    h = guidata(hObject);
     [B, L] = bwboundaries(img,'noholes');
     stats = regionprops(L,'Area','Centroid', 'MinorAxisLength', 'MajorAxisLength');
-
-    set(h.grainsNumVal, 'String', size(stats, 1));
 
     % diameters
     diameters = mean(transpose([stats.MajorAxisLength ;stats.MinorAxisLength]),2);
     diametersTable = [median(diameters) mean(diameters) std(diameters)];
-
+    
     % short axis
     shortAxisTable = [median([stats.MinorAxisLength]) mean([stats.MinorAxisLength]) std([stats.MinorAxisLength])];
     
     % long axis
     longAxisTable = [median([stats.MajorAxisLength]) mean([stats.MajorAxisLength]) std([stats.MajorAxisLength])];
-
+    
     % Circularity   
     for k = 1:length(B)
-
+        
         % obtain (X,Y) boundary coordinates corresponding to label 'k'
         boundary = B{k};
         
@@ -312,12 +338,24 @@ function info = CalculateParams(img, h)
         % compute the roundness metric
         circularity(k) = 4*pi*area/perimeter^2;
     end
-
+    
     circularityTable = [median(circularity) mean(circularity) std(circularity)];
-
+    
     % aspect ratio
     ratios = [stats.MinorAxisLength]./[stats.MajorAxisLength];
     ratioTable = [median(ratios) mean(ratios) std(ratios)];
+    
+    h.Params.Number = size(stats, 1);
+    h.Params.Diameter = diametersTable;
+    h.Params.ShortAxis = shortAxisTable;
+    h.Params.LongAxis = longAxisTable;
+    h.Params.Circularity = circularityTable;
+    h.Params.Ratio = ratioTable;
+    guidata(hObject, h);
 
-    info = [diametersTable; shortAxisTable; longAxisTable; circularityTable; ratioTable];
+function DisplayData(hObject)
+    h = guidata(hObject);
+    set(h.grainsNumVal, 'String', h.Params.Number);
+    info = [h.Params.Diameter; h.Params.ShortAxis; h.Params.LongAxis; h.Params.Circularity; h.Params.Ratio];
+    
     set(h.tablePixels, 'Data',  info);
