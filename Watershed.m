@@ -6,7 +6,6 @@ function result_img = Watershed(file_name, log, open_radius, sharpen_radius, thr
     opening_img = imopen(I, disk_kernel);
 
     if log == true
-        CreateDictionary(file_name);
         imwrite(opening_img, Create_file_name(file_name, "open"));
     end
 

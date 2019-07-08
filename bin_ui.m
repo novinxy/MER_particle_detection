@@ -90,6 +90,8 @@ function RefreshBtn_Callback(hObject, h)
     
     radius = Get(h.radiusVal);
     
+    CreateDictionary(fullPath);
+
     if h.binarizationFlag.Value
         resultImg = Binarization_Callback(h, fullPath, radius);
 

@@ -7,7 +7,6 @@ function [result_img, thresh_level] = Binarization(file_name, log, radius, thres
 
     % save to file
     if log == true
-        CreateDictionary(file_name);
         imwrite(opening_img, Create_file_name(file_name, "open"));
     end
     
