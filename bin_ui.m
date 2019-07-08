@@ -303,10 +303,10 @@ function DisplayContours(image, h)
 function CalculateParams(img,  hObject)
     h = guidata(hObject);
     [B, L] = bwboundaries(img,'noholes');
-    stats = regionprops(L,'Area','Centroid', 'MinorAxisLength', 'MajorAxisLength');
+    stats = regionprops(L,'Area','Centroid', 'MinorAxisLength', 'MajorAxisLength', 'EquivDiameter');
 
     % diameters
-    diameters = mean(transpose([stats.MajorAxisLength ;stats.MinorAxisLength]),2);
+    diameters = [stats.EquivDiameter];
     diametersTable = [median(diameters) mean(diameters) std(diameters)];
     
     % short axis
@@ -393,7 +393,7 @@ function DisplayData(hObject)
 
 % --- converts Pixels to MMs, value can be scalar or matrix
 function convertedVaue = Pixels2MM(value)
-    scale = 0.034;
+    scale = 0.031;
     convertedVaue = value.* scale;
 
 
