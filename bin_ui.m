@@ -110,7 +110,9 @@ function RefreshBtn_Callback(hObject, h)
         DisplayImage(myImage, h);
     end
 
-    resultImg = bwareaopen(resultImg, 200);
+
+    resultImg = DeleteObjectsBydiameter(resultImg, Get(h.minDiameterVal), Get(h.maxDiameterVal));
+    resultImg = DeleteObjectsByCircularity(resultImg, Get(h.circularityVal));
 
     DisplayContours(resultImg, h);
 
@@ -397,6 +399,12 @@ function convertedVaue = Pixels2MM(value)
     convertedVaue = value.* scale;
 
 
+% --- converts MMs to Pixels, value can be scalar or matrix
+function convertedVaue = MMs2Pixels(value)
+    scale = 0.031;
+    convertedVaue = value./ scale;
+
+
 % --- writes grains data to file
 function WriteDataToFile(hObject, dataTypes)
     h = guidata(hObject);
@@ -449,3 +457,43 @@ function Metric2PixelToggle_Callback(hObject, eventdata, handles)
     end
 
     guidata(hObject, h);
+
+
+function resultImg = DeleteObjectsBydiameter(image, minDiameter, maxDiameter)
+    resultImg = bwpropfilt(im2bw(image), 'EquivDiameter', [MMs2Pixels(minDiameter) MMs2Pixels(maxDiameter)]);
+
+
+function resultImg = DeleteObjectsByCircularity(image, minCircularity)
+    [B, L] = bwboundaries(image,'noholes');
+    stats = regionprops(L,'Area');
+
+    for k = 1:length(B)
+        
+        % obtain (X,Y) boundary coordinates corresponding to label 'k'
+        boundary = B{k};
+        
+        % compute a simple estimate of the object's perimeter
+        delta_sq = diff(boundary).^2;    
+        perimeter = sum(sqrt(sum(delta_sq,2)));
+        
+        % obtain the area calculation corresponding to label 'k'
+        area = stats(k).Area;
+        
+        % compute the roundness metric
+        circularity(k) = 4*pi*area/perimeter^2;
+    end
+
+    for i = length(circularity):-1:1
+        if circularity(i) < minCircularity
+            B(i) = [];
+            for x = 1:length(L)
+                for y = 1:length(L)
+                    if L(x ,y) == i
+                        L(x,y) = 0;
+                    end
+                end
+            end
+        end
+    end
+
+    resultImg = L;
