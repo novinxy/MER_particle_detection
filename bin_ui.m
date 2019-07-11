@@ -49,9 +49,11 @@ function bin_ui_OpeningFcn(hObject, ~, h, varargin)
     
     h.imageStructs = filelist;
     set(h.otsuFlag, 'value', true);
+    set(h.otsuWaterFlag, 'value', true);
     set(h.sharpenRadiusFlag, 'value', true);
     set(h.sharpRadiusVal, 'enable', 'on');
-    set(h.binThVal, 'enable', 'off')
+    set(h.binThVal, 'enable', 'off');
+    set(h.binWaterThVal, 'enable', 'off');
     set(h.imagesList, 'string', fileNames);
 
     contents = cellstr(get(h.imagesList,'String'));
@@ -196,6 +198,12 @@ function ImagesList_Callback(hObject, h)
     guidata(hObject, h);
 
 
+% --- Executes on slider movement.
+% function BinThreshold_Callback(h)
+    % sliderValue = get(h.binThVal,'Value');
+    % set(h.binThValLbl,'String', num2str(sliderValue));
+
+
 % --- CUSTOM FUNCTIONS ---
 
 % --- returns full path for file struct
@@ -229,7 +237,11 @@ function DisplayImage(myImage, h)
 % --- Calls Binarization with correct args
 function resultImg = Binarization_Callback(h, path, radius)
     if h.otsuFlag.Value == false
-        [resultImg, otsu] = Binarization(path, h.saveStepsFlag.Value, radius, Get(h.binThVal));
+        [s, binThresh] = TryGet(h.binThVal,  @(binTh) 0 < binTh && binTh < 1, "Binarization threshold should be between 0 and 1: 0 < binThresh < 1");
+        if s == false
+            return;        
+        end
+        [resultImg, otsu] = Binarization(path, h.saveStepsFlag.Value, radius, binThresh);
     else
         [resultImg, otsu] = Binarization(path, h.saveStepsFlag.Value, radius);
     end    
@@ -252,24 +264,33 @@ function resultImg = Canny_Callback(h, path, radius)
 
 % --- Calls Watershed with correct args
 function resultImg = Watershed_Callback(h, path, radius)
-    [s1, sharpRadius]    = TryGet(h.sharpRadiusVal,          @(radius) radius >= 0, "Sharpen Radius should be bigger or equal to zero: radius >= 0");
-    [s2, low]             = TryGet(h.waterLowThVal,  @(low) 0 < low && low < 1, "Incorrect low value, should be: 0 < low < high < 1");
-    [s3, high]            = TryGet(h.waterHighThVal, @(high) 0 < high && low < high && high < 1, "Incorrect high value, should be: 0 < low < high < 1");
+    [s1, sharpRadius]     = TryGet(h.sharpRadiusVal,     @(radius) radius >= 0, "Sharpen Radius should be bigger or equal to zero: radius >= 0");
+    [s2, low]             = TryGet(h.waterLowThVal,      @(low) 0 < low && low < 1, "Incorrect low value, should be: 0 < low < high < 1");
+    [s3, high]            = TryGet(h.waterHighThVal,     @(high) 0 < high && low < high && high < 1, "Incorrect high value, should be: 0 < low < high < 1");
     [s4, sigma]           = TryGet(h.waterSigmaVal,      @(sigma) sigma > 0, "Sigma should be bigger than zero: sigma > 0");
-    [s5, gradientThresh] = TryGet(h.gradientThVal,  @(gThresh) gThresh > 0, "Gradient threshold should be bigger than zero: radius > 0");
-    [s6, gaussSigma]     = TryGet(h.gaussSigmaVal,      @(gSigma) gSigma > 0, "Gaussian sigma should be bigger than zero: gSigma > 0");
-    [s7, gaussFilter]    = TryGet(h.filterVal,          @(gFilter) mod(gFilter, 2) == 1, "Gaussian filter should be odd value");
-
+    [s5, gradientThresh]  = TryGet(h.gradientThVal,      @(gThresh) gThresh > 0, "Gradient threshold should be bigger than zero: radius > 0");
+    [s6, gaussSigma]      = TryGet(h.gaussSigmaVal,      @(gSigma) gSigma > 0, "Gaussian sigma should be bigger than zero: gSigma > 0");
+    [s7, gaussFilter]     = TryGet(h.filterVal,          @(gFilter) mod(gFilter, 2) == 1, "Gaussian filter should be odd value");
+    
     if h.sharpenRadiusFlag.Value == false
         sharpRadius = 0;
     end
-
-    if s1 && s2 && s3 && s4 && s5 && s6 && s7
-        resultImg = Watershed(path, h.saveStepsFlag.Value, radius, sharpRadius, [low, high], sigma, gradientThresh, gaussSigma, gaussFilter);
-    else
+    
+    if (s1 && s2 && s3 && s4 && s5 && s6 && s7) == false
         return;
     end
+    
+    if h.otsuWaterFlag.Value == false
+        [s8, binThresh] = TryGet(h.binWaterThVal, @(binTh) 0 < binTh && binTh < 1, "Binarization threshold should be between 0 and 1: 0 < binThresh < 1");
+        if s8 == false
+            return;
+        end
+        [resultImg, otsu] = Watershed(path, h.saveStepsFlag.Value, radius, sharpRadius, [low, high], sigma, gradientThresh, gaussSigma, gaussFilter, binThresh);
+    else
+        [resultImg, otsu] = Watershed(path, h.saveStepsFlag.Value, radius, sharpRadius, [low, high], sigma, gradientThresh, gaussSigma, gaussFilter);
+    end
 
+    set(h.binWaterThVal, 'String', num2str(otsu));
 
 % --- Returns double value from handle
 function value = Get(handle)
@@ -368,6 +389,14 @@ function CalculateParams(img,  hObject)
     Image = frame2im(F);
     CreateDictionary(fullPath);
     imwrite(Image, Create_file_name(fullPath, "distribution"));
+
+    % f = figure('visible','off');
+    % copyobj(h.granulometric, f);
+    % hgsave(f, 'myFigure.fig');
+
+    % savefig([h.granulometric], Create_file_name(fullPath, "figure"));
+    % saveas(h.granulometric, "myFigure.fig");
+
 
     guidata(hObject, h);
 
@@ -502,3 +531,13 @@ function SharpenRadiusFlag_Callback(hObject)
     end
 
     guidata(hObject, h);
+
+
+% --- Executes on button press in otsuFlag.
+function OtsuWaterFlag_Callback(hObject, ~, h)
+    flag = get(hObject, 'Value');
+    if flag == true
+        set(h.binWaterThVal, 'enable', 'off')
+    else
+        set(h.binWaterThVal, 'enable', 'on')
+    end
