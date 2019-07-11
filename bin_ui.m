@@ -196,12 +196,6 @@ function ImagesList_Callback(hObject, h)
     guidata(hObject, h);
 
 
-% --- Executes on slider movement.
-% function BinThreshold_Callback(h)
-    % sliderValue = get(h.binThVal,'Value');
-    % set(h.binThValLbl,'String', num2str(sliderValue));
-
-
 % --- CUSTOM FUNCTIONS ---
 
 % --- returns full path for file struct
@@ -374,14 +368,6 @@ function CalculateParams(img,  hObject)
     Image = frame2im(F);
     CreateDictionary(fullPath);
     imwrite(Image, Create_file_name(fullPath, "distribution"));
-
-    % f = figure('visible','off');
-    % copyobj(h.granulometric, f);
-    % hgsave(f, 'myFigure.fig');
-
-    % savefig([h.granulometric], Create_file_name(fullPath, "figure"));
-    % saveas(h.granulometric, "myFigure.fig");
-
 
     guidata(hObject, h);
 
