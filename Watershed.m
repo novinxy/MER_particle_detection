@@ -1,4 +1,4 @@
-function result_img = Watershed(file_name, log, open_radius, sharpen_radius, thresh, sigma, gradient_threshold, gaussian_sigma, guassian_filter)
+function result_img = Watershed(file_name, log, open_radius, sharpen_radius, thresh, sigma, gradient_threshold, gaussian_sigma, guassian_filter, level)
     I = imread(file_name);
 
     % open operation
@@ -56,7 +56,9 @@ function result_img = Watershed(file_name, log, open_radius, sharpen_radius, thr
     % START
 
         % binarization OTSU threshold
-        level = graythresh(sharpened_img);
+        if nargin < 10
+            level = graythresh(sharpened_img);
+        end
         binary_img = imbinarize(sharpened_img, level);
         if log == true
             imwrite(binary_img, Create_file_name(file_name, "bin"));

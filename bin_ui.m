@@ -197,9 +197,9 @@ function ImagesList_Callback(hObject, h)
 
 
 % --- Executes on slider movement.
-function BinThreshold_Callback(h)
-    sliderValue = get(h.binThVal,'Value');
-    set(h.binThValLbl,'String', num2str(sliderValue));
+% function BinThreshold_Callback(h)
+    % sliderValue = get(h.binThVal,'Value');
+    % set(h.binThValLbl,'String', num2str(sliderValue));
 
 
 % --- CUSTOM FUNCTIONS ---
@@ -235,13 +235,12 @@ function DisplayImage(myImage, h)
 % --- Calls Binarization with correct args
 function resultImg = Binarization_Callback(h, path, radius)
     if h.otsuFlag.Value == false
-        [resultImg, otsu] = Binarization(path, h.saveStepsFlag.Value, radius, h.binThVal.Value);
+        [resultImg, otsu] = Binarization(path, h.saveStepsFlag.Value, radius, Get(h.binThVal));
     else
         [resultImg, otsu] = Binarization(path, h.saveStepsFlag.Value, radius);
     end    
 
-    set(h.binThValLbl, 'String', num2str(otsu));
-    set(h.binThVal, 'Value', otsu);
+    set(h.binThVal, 'String', num2str(otsu));
 
 
 % --- Calls Canny with correct args
