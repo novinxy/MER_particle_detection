@@ -15,7 +15,11 @@ function result_img = Watershed(file_name, log, open_radius, sharpen_radius, thr
     end
         
     % sharpening image
-    sharpened_img = imsharpen(opening_img, "Radius", sharpen_radius);
+    if sharpen_radius ~= 0
+        sharpened_img = imsharpen(opening_img, "Radius", sharpen_radius);
+    else
+        sharpened_img = opening_img;
+    end
 
     % FIRST PARALLEL 
     % START
