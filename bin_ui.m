@@ -20,9 +20,10 @@ function varargout = bin_ui(varargin)
 
 % --- Executes just before bin_ui is made visible.
 function bin_ui_OpeningFcn(hObject, ~, h, varargin)
-    h.metricFlag.Value = false;
-    set(h.pixelsPanel, 'Visible', 'on');
-    set(h.metricsPanel, 'Visible', 'off');
+    set(h.pixelsPanel, 'Visible', 'off');
+    set(h.metricsPanel, 'Visible', 'on');
+    set(h.statsPanel, 'Visible', 'on');
+    set(h.grainsPanel, 'Visible', 'off');
 
     set(h.binarizationFlag, 'Value', true);
     BinarizationFlag_Callback(h);
@@ -88,8 +89,10 @@ function OtsuFlag_Callback(hObject, ~, h)
 
 
 % --- Executes on button press in refreshBtn.
-function RefreshBtn_Callback(hObject, h)
+function RefreshBtn_Callback(hObject, ~)
     h = guidata(hObject);
+    set(h.grainsList, 'string', "");
+    set(h.grainsList, 'value', 1);
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     
     radius = Get(h.radiusVal);
@@ -171,7 +174,7 @@ function WaterFlag_Callback(h)
 
 
 % --- Executes on selection change in imagesList.
-function ImagesList_Callback(hObject, h)
+function ImagesList_Callback(hObject, ~)
     h = guidata(hObject);
     contents = cellstr(get(h.imagesList,'String'));
     h.selectedImage = contents{get(h.imagesList, 'Value')};
@@ -290,21 +293,41 @@ function [success, value] = TryGet(handle, predicate, errMsg)
 
 
 % --- Displays contours on scaled image
-function DisplayContours(image, h)
+function DisplayContours(image, h, selected)
     hold on;
-    dispalyImage = FitToAxes(image, h);
-    [B, ~] = bwboundaries(dispalyImage,'noholes');
-    for k = 1:length(B)
-        boundary = B{k};
-        plot(boundary(:,2),boundary(:,1),'r','LineWidth',2)
-    end
+    % displayImage = FitToAxes(image, h);
+    displayImage = image;
+    [B, ~] = bwboundaries(displayImage,'noholes');
     
+    
+    set(h.display ,'Units','pixels');
+    resizePos = get(h.display ,'Position');
+    scale = resizePos(3) / 1024;
+
+    if nargin < 3
+        for k = 1:length(B)
+            boundary = B{k}.*scale;
+            plot(boundary(:,2),boundary(:,1),'r','LineWidth',2)
+        end
+    else
+        for k = 1:length(B)
+            boundary = B{k}.*scale;
+            if selected == k
+                plot(boundary(:,2),boundary(:,1),'b','LineWidth',2)
+            else
+                plot(boundary(:,2),boundary(:,1),'r','LineWidth',2)
+            end
+        end
+
+    end
+
 
 % --- calculates contours/grains parameters from image
 function CalculateParams(img,  hObject)
     h = guidata(hObject);
     [B, L] = bwboundaries(img,'noholes');
     stats = regionprops(L,'Area','Centroid', 'MinorAxisLength', 'MajorAxisLength', 'EquivDiameter');
+    h.resultImage = img;
 
     % diameters
     diameters = [stats.EquivDiameter];
@@ -317,6 +340,7 @@ function CalculateParams(img,  hObject)
     longAxisTable = [median([stats.MajorAxisLength]) mean([stats.MajorAxisLength]) std([stats.MajorAxisLength])];
     
     % Circularity   
+    circularity = zeros(1, length(B));
     for k = 1:length(B)
         
         % obtain (X,Y) boundary coordinates corresponding to label 'k'
@@ -339,6 +363,11 @@ function CalculateParams(img,  hObject)
     ratios = [stats.MinorAxisLength]./[stats.MajorAxisLength];
     ratioTable = [median(ratios) mean(ratios) std(ratios)];
     
+    h.Params.DiametersList = diameters;
+    h.Params.ShortAxisList = [stats.MinorAxisLength];
+    h.Params.LongAxisList = [stats.MajorAxisLength];
+    h.Params.CircularityList = circularity;
+    h.Params.RatioList = ratios;
     h.Params.Number = size(stats, 1);
     h.Params.Diameter = diametersTable;
     h.Params.ShortAxis = shortAxisTable;
@@ -366,6 +395,7 @@ function CalculateParams(img,  hObject)
     CreateDictionary(fullPath);
     imwrite(Image, Create_file_name(fullPath, "distribution"));
 
+    FillGrainList(h, h.Params.Number);
     guidata(hObject, h);
 
 
@@ -429,32 +459,34 @@ function WriteDataToFile(hObject, dataTypes)
 
 
 % --- Executes on button press in metric2PixelToggle.
-function Metric2PixelToggle_Callback(hObject)
+function ToMetrics_Callback(hObject)
     h = guidata(hObject);
-    metric_value = h.metricFlag.Value;
-    if metric_value == true
-        h.metricFlag.Value = false;
-        set(h.pixelsPanel, 'Visible', 'on');
-        set(h.metricsPanel, 'Visible', 'off');
-        set(h.metric2PixelToggle, 'String', 'Metrics');
-    else
-        h.metricFlag.Value = true;
-        set(h.pixelsPanel, 'Visible', 'off');
-        set(h.metricsPanel, 'Visible', 'on');
-        set(h.metric2PixelToggle, 'String', 'Pixels');
-    end
+    set(h.pixelsPanel, 'Visible', 'off');
+    set(h.metricsPanel, 'Visible', 'on');
+    set(h.toMetricsButton, 'BackgroundColor', [0.301960784313725	0.745098039215686	0.933333333333333]);
+    set(h.toPixelsButton, 'BackgroundColor', [0.940000000000000	0.940000000000000	0.940000000000000]);
+
+    guidata(hObject, h);
+
+function ToPixels_Callback(hObject)
+    h = guidata(hObject);
+    set(h.pixelsPanel, 'Visible', 'on');
+    set(h.metricsPanel, 'Visible', 'off');
+    set(h.toPixelsButton, 'BackgroundColor', [0.301960784313725	0.745098039215686	0.933333333333333]);
+    set(h.toMetricsButton, 'BackgroundColor', [0.940000000000000	0.940000000000000	0.940000000000000]);
 
     guidata(hObject, h);
 
 
 function resultImg = DeleteObjectsBydiameter(image, minDiameter, maxDiameter)
-    resultImg = bwpropfilt(im2bw(image), 'EquivDiameter', [MMs2Pixels(minDiameter) MMs2Pixels(maxDiameter)]);
+    resultImg = bwpropfilt(imbinarize(image), 'EquivDiameter', [MMs2Pixels(minDiameter) MMs2Pixels(maxDiameter)]);
 
 
 function resultImg = DeleteObjectsByCircularity(image, minCircularity)
     [B, L] = bwboundaries(image,'noholes');
     stats = regionprops(L,'Area');
 
+    circularity = zeros(1, length(B));
     for k = 1:length(B)
         
         % obtain (X,Y) boundary coordinates corresponding to label 'k'
@@ -487,6 +519,19 @@ function resultImg = DeleteObjectsByCircularity(image, minCircularity)
     resultImg = L;
 
 
+function resultImg = DeleteObjectByIndex(image, index)
+    [~, L] = bwboundaries(image,'noholes');
+    for x = 1:length(L)
+        for y = 1:length(L)
+            if L(x ,y) == index
+                L(x,y) = 0;
+            end
+        end
+    end
+
+    resultImg = L;
+
+
 % --- Executes on button press in sharpenRadiusFlag.
 function SharpenRadiusFlag_Callback(hObject)
     h = guidata(hObject);
@@ -509,3 +554,97 @@ function OtsuWaterFlag_Callback(hObject, ~, h)
     else
         set(h.binWaterThVal, 'enable', 'on')
     end
+
+
+% --- Executes on button press in statsButton.
+function statsButton_Callback(~, ~, handles)
+    set(handles.statsPanel, 'Visible', 'on');
+    set(handles.grainsPanel, 'Visible', 'off');
+    set(handles.statsButton, 'BackgroundColor', [0.301960784313725	0.745098039215686	0.933333333333333]);
+    set(handles.grainsButton, 'BackgroundColor', [0.940000000000000	0.940000000000000	0.940000000000000]);
+
+
+
+% --- Executes on button press in grainsButton.
+function grainsButton_Callback(~, ~, handles)
+    set(handles.statsPanel, 'Visible', 'off');
+    set(handles.grainsPanel, 'Visible', 'on');
+    set(handles.grainsButton, 'BackgroundColor', [0.301960784313725	0.745098039215686	0.933333333333333]);
+    set(handles.statsButton, 'BackgroundColor', [0.940000000000000	0.940000000000000	0.940000000000000]);
+   
+
+
+% --- Executes on selection change in grainsList.
+function grainsList_Callback(hObject, ~, ~)
+    h = guidata(hObject);
+    contents = cellstr(get(h.grainsList,'String'));
+    i = str2double(contents{get(h.grainsList, 'Value')});
+
+    h.SelectedGrain = i;
+    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+    
+    myImage = imread(fullPath);
+    myImage = histeq(myImage);
+    DisplayImage(myImage, h);
+
+    DisplayContours(h.resultImage, h, i);
+
+    diameter = Pixels2MM(h.Params.DiametersList(i));
+    shortAxis = Pixels2MM(h.Params.ShortAxisList(i));
+    longAxis = Pixels2MM(h.Params.LongAxisList(i));
+    circularity = h.Params.CircularityList(i);
+    ratio = h.Params.RatioList(i);
+    data = [diameter, shortAxis, longAxis, circularity, ratio];
+    set(h.grainDataTable, 'Data',  data);
+    guidata(hObject, h);
+
+% --- Executes during object creation, after setting all properties.
+function grainsList_CreateFcn(hObject, ~, ~)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+function FillGrainList(h, k)
+    list = 1 : k;
+    set(h.grainsList, 'string', list);
+
+
+% --- Executes during object creation, after setting all properties.
+function grainDataTable_CreateFcn(hObject, eventdata, handles)
+set(hObject, 'Data', cell(1));
+% hObject    handle to grainDataTable (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+
+% --- Executes on button press in deleteGrain.
+function deleteGrain_Callback(hObject, ~, ~)
+    h = guidata(hObject);
+    set(h.grainsList, 'value', 1);
+    
+    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+    
+    myImage = imread(fullPath);
+    myImage = histeq(myImage);
+    DisplayImage(myImage, h);
+    
+    h.resultImage = DeleteObjectByIndex(h.resultImage, h.SelectedGrain);
+    DisplayContours(h.resultImage, h);
+
+    guidata(hObject, h);
+
+    CalculateParams(h.resultImage, hObject);
+    h = guidata(hObject);
+
+    DisplayData(hObject);
+
+
+    F = getframe(h.display);
+    Image = frame2im(F);
+    CreateDictionary(fullPath);
+    imwrite(Image, Create_file_name(fullPath, "display"));
+
+    WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
+
+    guidata(hObject, h);

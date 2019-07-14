@@ -1,4 +1,4 @@
-function [result_img, bin_level] = WatershedNew(file_name, log, open_radius, sharpen_radius, thresh, sigma, gaussian_sigma, guassian_filter, bin_level)
+function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpen_radius, thresh, sigma, gaussian_sigma, guassian_filter, bin_level)
     I = imread(file_name);
 
     % open operation
