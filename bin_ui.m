@@ -137,11 +137,6 @@ function RefreshBtn_Callback(hObject, h)
 function BinarizationFlag_Callback(h)
     flag_value = h.binarizationFlag.Value;
     if flag_value == true
-        set(h.lowThVal, 'enable', 'off');
-        set(h.highThVal, 'enable', 'off');
-        set(h.sigmaVal, 'enable', 'off');
-        set(h.otsuFlag, 'enable', 'on');
-        set(h.binThVal, 'enable', 'on');
         set(h.binPanel, 'Visible', 'on');
         set(h.cannyPanel, 'Visible', 'off');
         set(h.waterPanel, 'Visible', 'off');
@@ -154,11 +149,6 @@ function BinarizationFlag_Callback(h)
 function CannyFlag_Callback(h)
     flag_value = h.cannyFlag.Value;
     if flag_value == true
-        set(h.lowThVal, 'enable', 'on');
-        set(h.highThVal, 'enable', 'on');
-        set(h.sigmaVal, 'enable', 'on');
-        set(h.otsuFlag, 'enable', 'off');
-        set(h.binThVal, 'enable', 'off');
         set(h.binPanel, 'Visible', 'off');
         set(h.cannyPanel, 'Visible', 'on');
         set(h.waterPanel, 'Visible', 'off');
@@ -171,11 +161,6 @@ function CannyFlag_Callback(h)
 function WaterFlag_Callback(h)
     flag_value = h.waterFlag.Value;
     if flag_value == true
-        set(h.lowThVal, 'enable', 'off');
-        set(h.highThVal, 'enable', 'off');
-        set(h.sigmaVal, 'enable', 'off');
-        set(h.otsuFlag, 'enable', 'off');
-        set(h.binThVal, 'enable', 'off');
         set(h.binPanel, 'Visible', 'off');
         set(h.cannyPanel, 'Visible', 'off');
         set(h.waterPanel, 'Visible', 'on');
@@ -197,11 +182,6 @@ function ImagesList_Callback(hObject, h)
     DisplayImage(myImage, h);
     guidata(hObject, h);
 
-
-% --- Executes on slider movement.
-% function BinThreshold_Callback(h)
-    % sliderValue = get(h.binThVal,'Value');
-    % set(h.binThValLbl,'String', num2str(sliderValue));
 
 
 % --- CUSTOM FUNCTIONS ---
@@ -268,26 +248,25 @@ function resultImg = Watershed_Callback(h, path, radius)
     [s2, low]             = TryGet(h.waterLowThVal,      @(low) 0 < low && low < 1, "Incorrect low value, should be: 0 < low < high < 1");
     [s3, high]            = TryGet(h.waterHighThVal,     @(high) 0 < high && low < high && high < 1, "Incorrect high value, should be: 0 < low < high < 1");
     [s4, sigma]           = TryGet(h.waterSigmaVal,      @(sigma) sigma > 0, "Sigma should be bigger than zero: sigma > 0");
-    [s5, gradientThresh]  = TryGet(h.gradientThVal,      @(gThresh) gThresh > 0, "Gradient threshold should be bigger than zero: radius > 0");
-    [s6, gaussSigma]      = TryGet(h.gaussSigmaVal,      @(gSigma) gSigma > 0, "Gaussian sigma should be bigger than zero: gSigma > 0");
-    [s7, gaussFilter]     = TryGet(h.filterVal,          @(gFilter) mod(gFilter, 2) == 1, "Gaussian filter should be odd value");
+    [s5, gaussSigma]      = TryGet(h.gaussSigmaVal,      @(gSigma) gSigma > 0, "Gaussian sigma should be bigger than zero: gSigma > 0");
+    [s6, gaussFilter]     = TryGet(h.filterVal,          @(gFilter) mod(gFilter, 2) == 1, "Gaussian filter should be odd value");
     
     if h.sharpenRadiusFlag.Value == false
         sharpRadius = 0;
     end
     
-    if (s1 && s2 && s3 && s4 && s5 && s6 && s7) == false
+    if (s1 && s2 && s3 && s4 && s5 && s6) == false
         return;
     end
     
     if h.otsuWaterFlag.Value == false
-        [s8, binThresh] = TryGet(h.binWaterThVal, @(binTh) 0 < binTh && binTh < 1, "Binarization threshold should be between 0 and 1: 0 < binThresh < 1");
-        if s8 == false
+        [s7, binThresh] = TryGet(h.binWaterThVal, @(binTh) 0 < binTh && binTh < 1, "Binarization threshold should be between 0 and 1: 0 < binThresh < 1");
+        if s7 == false
             return;
         end
-        [resultImg, otsu] = Watershed(path, h.saveStepsFlag.Value, radius, sharpRadius, [low, high], sigma, gradientThresh, gaussSigma, gaussFilter, binThresh);
+        [resultImg, otsu] = Watershed(path, h.saveStepsFlag.Value, radius, sharpRadius, [low, high], sigma, gaussSigma, gaussFilter, binThresh);
     else
-        [resultImg, otsu] = Watershed(path, h.saveStepsFlag.Value, radius, sharpRadius, [low, high], sigma, gradientThresh, gaussSigma, gaussFilter);
+        [resultImg, otsu] = Watershed(path, h.saveStepsFlag.Value, radius, sharpRadius, [low, high], sigma, gaussSigma, gaussFilter);
     end
 
     set(h.binWaterThVal, 'String', num2str(otsu));
@@ -367,8 +346,6 @@ function CalculateParams(img,  hObject)
     h.Params.Circularity = circularityTable;
     h.Params.Ratio = ratioTable;
 
-
-
     % -- distribution
     pd = makedist('Normal');
     values = sort(Pixels2MM(diameters));
@@ -380,7 +357,6 @@ function CalculateParams(img,  hObject)
 
     set(h.granulometric.XLabel, 'String', 'Diameter [mm]');
     set(h.granulometric.YLabel, 'String', 'Cumulative [%]');
-    % set(gca,'XLim',[0 2],'YLim',[0 100]);
     set(gca,'XLim',[0 2]);
 
 
@@ -389,14 +365,6 @@ function CalculateParams(img,  hObject)
     Image = frame2im(F);
     CreateDictionary(fullPath);
     imwrite(Image, Create_file_name(fullPath, "distribution"));
-
-    % f = figure('visible','off');
-    % copyobj(h.granulometric, f);
-    % hgsave(f, 'myFigure.fig');
-
-    % savefig([h.granulometric], Create_file_name(fullPath, "figure"));
-    % saveas(h.granulometric, "myFigure.fig");
-
 
     guidata(hObject, h);
 

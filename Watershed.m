@@ -1,4 +1,4 @@
-function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpen_radius, thresh, sigma, gradient_threshold, gaussian_sigma, guassian_filter, bin_level)
+function [result_img, bin_level] = WatershedNew(file_name, log, open_radius, sharpen_radius, thresh, sigma, gaussian_sigma, guassian_filter, bin_level)
     I = imread(file_name);
 
     % open operation
@@ -44,9 +44,10 @@ function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpe
 
         % gradient filtering
         [gmag, ~] = imgradient(added_img);
-        gradient_img = gmag > gradient_threshold;
+        gmag = rescale(gmag);
+
         if log == true
-            imwrite(gradient_img, Create_file_name(file_name, "gradient"));
+            imwrite(gmag, Create_file_name(file_name, "gradient"));
         end
 
     % FIRST PARALLEL 
@@ -56,7 +57,7 @@ function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpe
     % START
 
         % binarization OTSU threshold
-        if nargin < 10
+        if nargin < 9
             bin_level = graythresh(sharpened_img);
         end
         binary_img = imbinarize(sharpened_img, bin_level);
@@ -77,7 +78,7 @@ function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpe
         end
 
         % distance transform
-        distance_img = bwdist(~filled);
+        distance_img = rescale(bwdist(~filled));
 
         % gaussian filtering
         gaussian_img = imgaussfilt(distance_img, gaussian_sigma, 'FilterSize', guassian_filter);
@@ -95,8 +96,12 @@ function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpe
     % END
 
     % adding two together
-    combined_img = img + gradient_img;
-
+    combined_img = imimposemin(gmag, img);
+    
+    if log == true
+        imwrite(combined_img, Create_file_name(file_name, "combined"));
+    end
+    
     % watershed
     water_img = watershed(combined_img);
     if isa(opening_img, 'uint8')
@@ -111,10 +116,6 @@ function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpe
 
     % deleting border objects
     result_img = imclearborder(binary_img);
-
-    % cleaning garbage
-    disk_kernel = Disk_kernel(7);
-    result_img = imopen(result_img, disk_kernel);
 
     if isa(opening_img, 'uint8')
         result_img = uint8(255 * result_img);
