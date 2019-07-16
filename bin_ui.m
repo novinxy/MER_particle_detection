@@ -133,6 +133,7 @@ function RefreshBtn_Callback(hObject, ~)
     imwrite(Image, Create_file_name(fullPath, "display"));
 
     WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
+    WriteGrainsToFile(hObject);
 %     guidata(hObject, h);
 
 
@@ -326,7 +327,7 @@ function DisplayContours(image, h, selected)
 function CalculateParams(img,  hObject)
     h = guidata(hObject);
     [B, L] = bwboundaries(img,'noholes');
-    stats = regionprops(L,'Area','Centroid', 'MinorAxisLength', 'MajorAxisLength', 'EquivDiameter');
+    stats = regionprops(L,'Area','Centroid', 'MinorAxisLength', 'MajorAxisLength', 'EquivDiameter', 'Perimeter');
     h.resultImage = img;
 
     % diameters
@@ -341,6 +342,8 @@ function CalculateParams(img,  hObject)
     
     % Circularity   
     circularity = zeros(1, length(B));
+    perimeter = zeros(1, length(B));
+    bwArea = zeros(1, length(B));
     for k = 1:length(B)
         
         % obtain (X,Y) boundary coordinates corresponding to label 'k'
@@ -348,13 +351,14 @@ function CalculateParams(img,  hObject)
         
         % compute a simple estimate of the object's perimeter
         delta_sq = diff(boundary).^2;    
-        perimeter = sum(sqrt(sum(delta_sq,2)));
+        perimeter(k) = sum(sqrt(sum(delta_sq,2)));
         
         % obtain the area calculation corresponding to label 'k'
         area = stats(k).Area;
+        bwArea(k) = bwarea(B{k});
         
         % compute the roundness metric
-        circularity(k) = 4*pi*area/perimeter^2;
+        circularity(k) = 4*pi*area/perimeter(k)^2;
     end
     
     circularityTable = [median(circularity) mean(circularity) std(circularity)];
@@ -364,6 +368,10 @@ function CalculateParams(img,  hObject)
     ratioTable = [median(ratios) mean(ratios) std(ratios)];
     
     h.Params.DiametersList = diameters;
+    h.Params.StatsPerimeters = [stats.Perimeter];
+    h.Params.CalculatedPerimeters = perimeter;
+    h.Params.Area = [stats.Area];
+    h.Params.BwArea = bwArea;
     h.Params.ShortAxisList = [stats.MinorAxisLength];
     h.Params.LongAxisList = [stats.MajorAxisLength];
     h.Params.CircularityList = circularity;
@@ -457,6 +465,35 @@ function WriteDataToFile(hObject, dataTypes)
 
     fclose(file);
 
+
+% --- writes grains data to file
+function WriteGrainsToFile(hObject)
+    h = guidata(hObject);
+
+    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+    splited = split(Create_file_name(fullPath, "grains"), '.');
+    fileName = splited(1) + ".txt";
+    file = fopen(fileName, 'wt');
+
+    dataMatrix = zeros(h.Params.Number, 8);
+    dataMatrix(:,1) = 1: 1: h.Params.Number;
+    dataMatrix(:,2) = h.Params.DiametersList;
+    dataMatrix(:,3) = h.Params.StatsPerimeters;
+    dataMatrix(:,4) = h.Params.CalculatedPerimeters;
+    dataMatrix(:,5) = h.Params.Area;
+    dataMatrix(:,6) = h.Params.BwArea;
+    dataMatrix(:,7) = h.Params.ShortAxisList;
+    dataMatrix(:,8) = h.Params.LongAxisList;
+    dataMatrix(:,9) = h.Params.CircularityList;
+
+    fprintf(file, 'Index\tEquivDiameter\tStatsPerimeter\tPerimeter\tArea\tbwarea\tMinorAxis\tMajorAxis\tCircularity\n'); 
+    for i = 1 : size(dataMatrix, 1)
+        data = dataMatrix(i,:);
+        fprintf(file, '%g\t\t  ', data);     
+        fprintf(file, '\n');
+    end
+
+    fclose(file);
 
 % --- Executes on button press in metric2PixelToggle.
 function ToMetrics_Callback(hObject)
