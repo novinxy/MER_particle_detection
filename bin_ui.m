@@ -74,10 +74,12 @@ function bin_ui_OpeningFcn(hObject, ~, h, varargin)
     % Update handles structure
     guidata(hObject, h);
 
+    
 % --- Outputs from this function are returned to the command line.
 function varargout = bin_ui_OutputFcn(~, ~, h) 
     varargout{1} = h.output;
     
+
 % --- Executes on button press in otsuFlag.
 function OtsuFlag_Callback(hObject, ~, h)
     flag = get(hObject, 'Value');
@@ -109,6 +111,11 @@ function RefreshBtn_Callback(hObject, ~)
         resultImg = Watershed_Callback(h, fullPath, radius);
     end
     
+    resultImg = DeleteObjectsBydiameter(resultImg, Get(h.minDiameterVal), Get(h.maxDiameterVal));
+    resultImg = DeleteObjectsByCircularity(resultImg, Get(h.circularityVal));
+
+    imwrite(resultImg, Create_file_name(fullPath, "result_bin"));
+
     if h.showOriginFlag.Value == false
         DisplayImage(resultImg, h);
     else
@@ -116,10 +123,6 @@ function RefreshBtn_Callback(hObject, ~)
         myImage = histeq(myImage);
         DisplayImage(myImage, h);
     end
-
-
-    resultImg = DeleteObjectsBydiameter(resultImg, Get(h.minDiameterVal), Get(h.maxDiameterVal));
-    resultImg = DeleteObjectsByCircularity(resultImg, Get(h.circularityVal));
 
     DisplayContours(resultImg, h);
 
@@ -130,7 +133,7 @@ function RefreshBtn_Callback(hObject, ~)
     F = getframe(h.display);
     Image = frame2im(F);
     CreateDictionary(fullPath);
-    imwrite(Image, Create_file_name(fullPath, "display"));
+    imwrite(Image, Create_file_name(fullPath, "result_display"));
 
     WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
     WriteGrainsToFile(hObject);
@@ -327,7 +330,7 @@ function DisplayContours(image, h, selected)
 function CalculateParams(img,  hObject)
     h = guidata(hObject);
     [B, L] = bwboundaries(img,'noholes');
-    stats = regionprops(L,'Area','Centroid', 'MinorAxisLength', 'MajorAxisLength', 'EquivDiameter', 'Perimeter');
+    stats = regionprops(L,'Area','Centroid', 'MinorAxisLength', 'MajorAxisLength', 'EquivDiameter', 'Perimeter', 'Circularity');
     h.resultImage = img;
 
     % diameters
@@ -341,40 +344,18 @@ function CalculateParams(img,  hObject)
     longAxisTable = [median([stats.MajorAxisLength]) mean([stats.MajorAxisLength]) std([stats.MajorAxisLength])];
     
     % Circularity   
-    circularity = zeros(1, length(B));
-    perimeter = zeros(1, length(B));
-    bwArea = zeros(1, length(B));
-    for k = 1:length(B)
-        
-        % obtain (X,Y) boundary coordinates corresponding to label 'k'
-        boundary = B{k};
-        
-        % compute a simple estimate of the object's perimeter
-        delta_sq = diff(boundary).^2;    
-        perimeter(k) = sum(sqrt(sum(delta_sq,2)));
-        
-        % obtain the area calculation corresponding to label 'k'
-        area = stats(k).Area;
-        bwArea(k) = bwarea(B{k});
-        
-        % compute the roundness metric
-        circularity(k) = 4*pi*area/perimeter(k)^2;
-    end
-    
-    circularityTable = [median(circularity) mean(circularity) std(circularity)];
+    circularityTable = [median([stats.Circularity]) mean([stats.Circularity]) std([stats.Circularity])];
     
     % aspect ratio
     ratios = [stats.MinorAxisLength]./[stats.MajorAxisLength];
     ratioTable = [median(ratios) mean(ratios) std(ratios)];
     
     h.Params.DiametersList = diameters;
-    h.Params.StatsPerimeters = [stats.Perimeter];
-    h.Params.CalculatedPerimeters = perimeter;
+    h.Params.Perimeters = [stats.Perimeter];
     h.Params.Area = [stats.Area];
-    h.Params.BwArea = bwArea;
     h.Params.ShortAxisList = [stats.MinorAxisLength];
     h.Params.LongAxisList = [stats.MajorAxisLength];
-    h.Params.CircularityList = circularity;
+    h.Params.CircularityList = [stats.Circularity];
     h.Params.RatioList = ratios;
     h.Params.Number = size(stats, 1);
     h.Params.Diameter = diametersTable;
@@ -475,18 +456,16 @@ function WriteGrainsToFile(hObject)
     fileName = splited(1) + ".txt";
     file = fopen(fileName, 'wt');
 
-    dataMatrix = zeros(h.Params.Number, 8);
+    dataMatrix = zeros(h.Params.Number, 7);
     dataMatrix(:,1) = 1: 1: h.Params.Number;
     dataMatrix(:,2) = h.Params.DiametersList;
-    dataMatrix(:,3) = h.Params.StatsPerimeters;
-    dataMatrix(:,4) = h.Params.CalculatedPerimeters;
-    dataMatrix(:,5) = h.Params.Area;
-    dataMatrix(:,6) = h.Params.BwArea;
-    dataMatrix(:,7) = h.Params.ShortAxisList;
-    dataMatrix(:,8) = h.Params.LongAxisList;
-    dataMatrix(:,9) = h.Params.CircularityList;
+    dataMatrix(:,3) = h.Params.Perimeters;
+    dataMatrix(:,4) = h.Params.Area;
+    dataMatrix(:,5) = h.Params.ShortAxisList;
+    dataMatrix(:,6) = h.Params.LongAxisList;
+    dataMatrix(:,7) = h.Params.CircularityList;
 
-    fprintf(file, 'Index\tEquivDiameter\tStatsPerimeter\tPerimeter\tArea\tbwarea\tMinorAxis\tMajorAxis\tCircularity\n'); 
+    fprintf(file, 'Index\t  EquivDiameter\t  Perimeter\t\t  Area\t\t  MinorAxis\t\t  MajorAxis\t\t  Circularity\n'); 
     for i = 1 : size(dataMatrix, 1)
         data = dataMatrix(i,:);
         fprintf(file, '%g\t\t  ', data);     
@@ -680,7 +659,9 @@ function deleteGrain_Callback(hObject, ~, ~)
     F = getframe(h.display);
     Image = frame2im(F);
     CreateDictionary(fullPath);
-    imwrite(Image, Create_file_name(fullPath, "display"));
+    imwrite(Image, Create_file_name(fullPath, "result_display"));
+
+    imwrite(h.resultImage, Create_file_name(fullPath, "result_bin"));
 
     WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
 
