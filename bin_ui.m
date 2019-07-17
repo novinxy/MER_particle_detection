@@ -659,3 +659,19 @@ function saveButton_Callback(hObject, eventdata, h)
 
     WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
     WriteGrainsToFile(hObject);
+
+
+function ShowOrigin_Callback(hObject, eventdata, h)
+    resultImageExist = isfield(h, 'resultImage') && length(ishandle(h.resultImage)) > 0;
+    if h.showOriginFlag.Value == false && resultImageExist
+        DisplayImage(h.resultImage, h);
+    else
+        fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+        myImage = imread(fullPath);
+        myImage = histeq(myImage);
+        DisplayImage(myImage, h);
+    end
+
+    if resultImageExist
+        DisplayContours(h.resultImage, h);
+    end
