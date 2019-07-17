@@ -99,7 +99,9 @@ function RefreshBtn_Callback(hObject, ~)
     
     radius = Get(h.radiusVal);
     
-    CreateDictionary(fullPath);
+    if h.saveStepsFlag.Value
+        CreateDictionary(fullPath);
+    end
 
     if h.binarizationFlag.Value
         resultImg = Binarization_Callback(h, fullPath, radius);
@@ -114,7 +116,6 @@ function RefreshBtn_Callback(hObject, ~)
     resultImg = DeleteObjectsBydiameter(resultImg, Get(h.minDiameterVal), Get(h.maxDiameterVal));
     resultImg = DeleteObjectsByCircularity(resultImg, Get(h.circularityVal));
 
-    imwrite(resultImg, Create_file_name(fullPath, "result_bin"));
 
     if h.showOriginFlag.Value == false
         DisplayImage(resultImg, h);
@@ -129,14 +130,6 @@ function RefreshBtn_Callback(hObject, ~)
     CalculateParams(resultImg, hObject);
     DisplayData(hObject);
 
-
-    F = getframe(h.display);
-    Image = frame2im(F);
-    CreateDictionary(fullPath);
-    imwrite(Image, Create_file_name(fullPath, "result_display"));
-
-    WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
-    WriteGrainsToFile(hObject);
 %     guidata(hObject, h);
 
 
@@ -368,22 +361,13 @@ function CalculateParams(img,  hObject)
     pd = makedist('Normal');
     values = sort(Pixels2MM(diameters));
     y = cdf(pd, sort(Pixels2MM(diameters)));
-
     axes(h.granulometric);
-    
     plot(values, y.*100);
-
     set(h.granulometric.XLabel, 'String', 'Diameter [mm]');
     set(h.granulometric.YLabel, 'String', 'Cumulative [%]');
     set(gca,'XLim',[0 2]);
 
-
-    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-    F = getframe(h.granulometric);
-    Image = frame2im(F);
-    CreateDictionary(fullPath);
-    imwrite(Image, Create_file_name(fullPath, "distribution"));
-
+    % -- fill grain data
     FillGrainList(h, h.Params.Number);
     guidata(hObject, h);
 
@@ -629,9 +613,6 @@ function FillGrainList(h, k)
 % --- Executes during object creation, after setting all properties.
 function grainDataTable_CreateFcn(hObject, eventdata, handles)
 set(hObject, 'Data', cell(1));
-% hObject    handle to grainDataTable (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
 
 
 % --- Executes on button press in deleteGrain.
@@ -655,14 +636,26 @@ function deleteGrain_Callback(hObject, ~, ~)
 
     DisplayData(hObject);
 
+    guidata(hObject, h);
 
+
+% --- Executes on button press in saveButton.
+function saveButton_Callback(hObject, eventdata, h)
+    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+    CreateDictionary(fullPath);
+
+    imwrite(h.resultImage, Create_file_name(fullPath, "result_bin"));
+    
     F = getframe(h.display);
     Image = frame2im(F);
     CreateDictionary(fullPath);
     imwrite(Image, Create_file_name(fullPath, "result_display"));
 
-    imwrite(h.resultImage, Create_file_name(fullPath, "result_bin"));
+    F = getframe(h.granulometric);
+    Image = frame2im(F);
+    CreateDictionary(fullPath);
+    imwrite(Image, Create_file_name(fullPath, "distribution"));
+
 
     WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
-
-    guidata(hObject, h);
+    WriteGrainsToFile(hObject);
