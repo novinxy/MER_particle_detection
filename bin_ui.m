@@ -68,9 +68,14 @@ function bin_ui_OpeningFcn(hObject, ~, h, varargin)
 
     DisplayImage(myImage, h);
 
+    set(gcf,'WindowButtonDownFcn',@display_ButtonDownFcn)
+    
     % Choose default command line output for main
     h.output = hObject;
 
+    
+    
+    
     % Update handles structure
     guidata(hObject, h);
 
@@ -93,8 +98,6 @@ function OtsuFlag_Callback(hObject, ~, h)
 % --- Executes on button press in refreshBtn.
 function RefreshBtn_Callback(hObject, ~)
     h = guidata(hObject);
-    set(h.grainsList, 'string', "");
-    set(h.grainsList, 'value', 1);
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     
     radius = Get(h.radiusVal);
@@ -367,8 +370,6 @@ function CalculateParams(img,  hObject)
     set(h.granulometric.YLabel, 'String', 'Cumulative [%]');
     set(gca,'XLim',[0 2]);
 
-    % -- fill grain data
-    FillGrainList(h, h.Params.Number);
     guidata(hObject, h);
 
 
@@ -573,43 +574,6 @@ function grainsButton_Callback(~, ~, handles)
     set(handles.statsButton, 'BackgroundColor', [0.940000000000000	0.940000000000000	0.940000000000000]);
    
 
-
-% --- Executes on selection change in grainsList.
-function grainsList_Callback(hObject, ~, ~)
-    h = guidata(hObject);
-    contents = cellstr(get(h.grainsList,'String'));
-    i = str2double(contents{get(h.grainsList, 'Value')});
-
-    h.SelectedGrain = i;
-    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-    
-    myImage = imread(fullPath);
-    myImage = histeq(myImage);
-    DisplayImage(myImage, h);
-
-    DisplayContours(h.resultImage, h, i);
-
-    diameter = Pixels2MM(h.Params.DiametersList(i));
-    shortAxis = Pixels2MM(h.Params.ShortAxisList(i));
-    longAxis = Pixels2MM(h.Params.LongAxisList(i));
-    circularity = h.Params.CircularityList(i);
-    ratio = h.Params.RatioList(i);
-    data = [diameter, shortAxis, longAxis, circularity, ratio];
-    set(h.grainDataTable, 'Data',  data);
-    guidata(hObject, h);
-
-% --- Executes during object creation, after setting all properties.
-function grainsList_CreateFcn(hObject, ~, ~)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-function FillGrainList(h, k)
-    list = 1 : k;
-    set(h.grainsList, 'string', list);
-
-
 % --- Executes during object creation, after setting all properties.
 function grainDataTable_CreateFcn(hObject, eventdata, handles)
 set(hObject, 'Data', cell(1));
@@ -618,7 +582,6 @@ set(hObject, 'Data', cell(1));
 % --- Executes on button press in deleteGrain.
 function deleteGrain_Callback(hObject, ~, ~)
     h = guidata(hObject);
-    set(h.grainsList, 'value', 1);
     
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     
@@ -627,6 +590,7 @@ function deleteGrain_Callback(hObject, ~, ~)
     DisplayImage(myImage, h);
     
     h.resultImage = DeleteObjectByIndex(h.resultImage, h.SelectedGrain);
+    h.SelectedGrain = -1;
     DisplayContours(h.resultImage, h);
 
     guidata(hObject, h);
@@ -675,3 +639,46 @@ function ShowOrigin_Callback(hObject, eventdata, h)
     if resultImageExist
         DisplayContours(h.resultImage, h);
     end
+
+
+% --- Executes on mouse press over axes background.
+function display_ButtonDownFcn(hObject, eventdata)
+    h = guidata(hObject);
+
+    set(h.display ,'Units','pixels');
+    resizePos = get(h.display ,'Position');
+    scale = 1024 / resizePos(3);
+
+    p = get(h.display, 'currentpoint');
+    p = p.*scale;
+
+    resultImageExist = isfield(h, 'resultImage') && length(ishandle(h.resultImage)) > 0;
+    if resultImageExist
+        [B, ~] = bwboundaries(h.resultImage,'noholes');
+        for i = 1 : length(B)
+            if inpolygon(p(1, 1), p(1, 2), B{i}(:,2), B{i}(:,1))
+                h.SelectedGrain = i;
+
+                fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+    
+                myImage = imread(fullPath);
+                myImage = histeq(myImage);
+                DisplayImage(myImage, h);
+            
+                DisplayContours(h.resultImage, h, i);
+            
+                diameter = Pixels2MM(h.Params.DiametersList(i));
+                shortAxis = Pixels2MM(h.Params.ShortAxisList(i));
+                longAxis = Pixels2MM(h.Params.LongAxisList(i));
+                circularity = h.Params.CircularityList(i);
+                ratio = h.Params.RatioList(i);
+                data = [diameter, shortAxis, longAxis, circularity, ratio];
+                set(h.grainDataTable, 'Data',  data);
+                break;
+            end
+        end
+
+
+    end
+
+    guidata(hObject, h);
