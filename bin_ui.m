@@ -118,8 +118,8 @@ function RefreshBtn_Callback(hObject, ~)
     
     resultImg = DeleteObjectsBydiameter(resultImg, Get(h.minDiameterVal), Get(h.maxDiameterVal));
     resultImg = DeleteObjectsByCircularity(resultImg, Get(h.circularityVal));
-
-
+    
+    
     if h.showOriginFlag.Value == false
         DisplayImage(resultImg, h);
     else
@@ -127,10 +127,12 @@ function RefreshBtn_Callback(hObject, ~)
         myImage = histeq(myImage);
         DisplayImage(myImage, h);
     end
-
+    
     DisplayContours(resultImg, h);
-
+    
     CalculateParams(resultImg, hObject);
+    h = guidata(hObject);
+    set(h.detectedCountVal, 'string', h.Params.Number);
     DisplayData(hObject);
 
 %     guidata(hObject, h);
@@ -406,7 +408,14 @@ function WriteDataToFile(hObject, dataTypes)
     fileName = splited(1) + ".txt";
     file = fopen(fileName, 'wt');
 
-    fprintf(file, 'Number of grains: %g\n', h.Params.Number);
+    fprintf(file, 'Number of detected grains: %g\n\n', Get(h.detectedCountVal));
+
+    fprintf(file, 'Filter values:\n');
+    fprintf(file, '\tMin diameter: %g\n', Get(h.minDiameterVal));
+    fprintf(file, '\tMax diameter: %g\n', Get(h.maxDiameterVal));
+    fprintf(file, '\tMin circularity: %g\n\n', Get(h.circularityVal));
+
+    fprintf(file, 'Number of correct grains: %g\n', h.Params.Number);
     fprintf(file, '\nIn pixels:\n');
     dataMatrix = [h.Params.Diameter; h.Params.ShortAxis; h.Params.LongAxis; h.Params.Circularity; h.Params.Ratio];
     for i = 1 : size(dataMatrix, 1)
