@@ -408,7 +408,42 @@ function WriteDataToFile(hObject, dataTypes)
     fileName = splited(1) + ".txt";
     file = fopen(fileName, 'wt');
 
-    fprintf(file, 'Number of detected grains: %g\n\n', Get(h.detectedCountVal));
+    fprintf(file, 'Choosen detection method: ');
+    if h.binarizationFlag.Value
+        fprintf(file, 'Binarization\n');
+        fprintf(file, '\tMethod was called with parameters:\n');
+        fprintf(file, '\t\tOpening radius: %g\n', Get(h.radiusVal));
+        fprintf(file, '\t\tBinarization threshold: %g\n', Get(h.binThVal));
+                        
+    elseif h.cannyFlag.Value
+        fprintf(file, 'Canny edge detection\n');
+        fprintf(file, '\tMethod was called with parameters:\n');
+        fprintf(file, '\t\tOpening radius: %g\n', Get(h.radiusVal));
+        fprintf(file, '\t\tLow threshold: %g\n', Get(h.lowThVal));
+        fprintf(file, '\t\tHigh threshold: %g\n', Get(h.highThVal));
+        fprintf(file, '\t\tSigma: %g\n', Get(h.sigmaVal));
+
+    else h.waterFlag.Value
+        fprintf(file, 'Watershed\n');
+        fprintf(file, '\tMethod was called with parameters:\n');
+        fprintf(file, '\t\tOpening radius: %g\n', Get(h.radiusVal));
+        sharpRadius = Get(h.sharpRadiusVal);
+        if h.sharpenRadiusFlag.Value == false
+            sharpRadius = 0;
+        end
+
+        fprintf(file, '\t\tSharpening radius: %g\n', sharpRadius);
+        fprintf(file, '\t\tLow threshold: %g\n', Get(h.waterLowThVal));
+        fprintf(file, '\t\tHigh threshold: %g\n', Get(h.waterHighThVal));
+        fprintf(file, '\t\tSigma: %g\n', Get(h.waterSigmaVal));
+        fprintf(file, '\t\tGaussian filtering sigma: %g\n', Get(h.gaussSigmaVal));
+        fprintf(file, '\t\tGaussian filtering size: %g\n', Get(h.filterVal));
+        fprintf(file, '\t\tBinarization threshold: %g\n', Get(h.binWaterThVal));
+        
+    end
+
+
+    fprintf(file, '\nNumber of detected grains: %g\n\n', Get(h.detectedCountVal));
 
     fprintf(file, 'Filter values:\n');
     fprintf(file, '\tMin diameter: %g\n', Get(h.minDiameterVal));
