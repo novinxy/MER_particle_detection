@@ -59,6 +59,7 @@ function bin_ui_OpeningFcn(hObject, ~, h, varargin)
 
     contents = cellstr(get(h.imagesList,'String'));
     h.selectedImage = contents{get(h.imagesList,'Value')};
+    h.SelectedGrain = [];
 
     contents = cellstr(h.imagesList.String);
     fileName = GetFullPath(char(contents(1)), h.imageStructs);
@@ -295,7 +296,7 @@ function [success, value] = TryGet(handle, predicate, errMsg)
 
 
 % --- Displays contours on scaled image
-function DisplayContours(image, h, selected)
+function DisplayContours(image, h)
     hold on;
     % displayImage = FitToAxes(image, h);
     displayImage = image;
@@ -306,21 +307,14 @@ function DisplayContours(image, h, selected)
     resizePos = get(h.display ,'Position');
     scale = resizePos(3) / 1024;
 
-    if nargin < 3
-        for k = 1:length(B)
-            boundary = B{k}.*scale;
-            plot(boundary(:,2),boundary(:,1),'r','LineWidth',2)
-        end
-    else
-        for k = 1:length(B)
-            boundary = B{k}.*scale;
-            if selected == k
-                plot(boundary(:,2),boundary(:,1),'b','LineWidth',2)
-            else
-                plot(boundary(:,2),boundary(:,1),'r','LineWidth',2)
-            end
-        end
+    for k = 1:length(B)
+        boundary = B{k}.*scale;
+        plot(boundary(:,2),boundary(:,1),'y','LineWidth',2)
+    end
 
+    for i = 1:length(h.SelectedGrain)
+        boundary = B{h.SelectedGrain(i)}.*scale;
+        plot(boundary(:,2),boundary(:,1),'b','LineWidth',2)
     end
 
 
@@ -564,12 +558,14 @@ function resultImg = DeleteObjectsByCircularity(image, minCircularity)
     resultImg = L;
 
 
-function resultImg = DeleteObjectByIndex(image, index)
+function resultImg = DeleteObjectByIndex(image, indexes)
     [~, L] = bwboundaries(image,'noholes');
     for x = 1:length(L)
         for y = 1:length(L)
-            if L(x ,y) == index
-                L(x,y) = 0;
+            for i = 1:length(indexes)
+                if L(x ,y) == indexes(i)
+                    L(x,y) = 0;
+                end
             end
         end
     end
@@ -634,7 +630,8 @@ function deleteGrain_Callback(hObject, ~, ~)
     DisplayImage(myImage, h);
     
     h.resultImage = DeleteObjectByIndex(h.resultImage, h.SelectedGrain);
-    h.SelectedGrain = -1;
+
+    h.SelectedGrain = [];
     DisplayContours(h.resultImage, h);
 
     guidata(hObject, h);
@@ -701,15 +698,15 @@ function display_ButtonDownFcn(hObject, eventdata)
         [B, ~] = bwboundaries(h.resultImage,'noholes');
         for i = 1 : length(B)
             if inpolygon(p(1, 1), p(1, 2), B{i}(:,2), B{i}(:,1))
-                h.SelectedGrain = i;
+                h.SelectedGrain(length(h.SelectedGrain) + 1) = i;
 
-                fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+                % fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     
-                myImage = imread(fullPath);
-                myImage = histeq(myImage);
-                DisplayImage(myImage, h);
+                % myImage = imread(fullPath);
+                % myImage = histeq(myImage);
+                % DisplayImage(myImage, h);
             
-                DisplayContours(h.resultImage, h, i);
+                DisplayContours(h.resultImage, h);
             
                 diameter = Pixels2MM(h.Params.DiametersList(i));
                 shortAxis = Pixels2MM(h.Params.ShortAxisList(i));
