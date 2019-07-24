@@ -750,10 +750,13 @@ function clearlyVisibleButton_Callback(hObject, eventdata, handles)
     DisplayImage(myImage, h);
     
 
-    h.ClearlyVisibleGrains = h.SelectedGrain;
+    h.ClearlyVisibleGrains = cat(2, h.ClearlyVisibleGrains, h.SelectedGrain);
 
     h.SelectedGrain = [];
     DisplayContours(h.resultImage, h);
+
+    DE = (h.Params.Number/ length(h.ClearlyVisibleGrains)) * 100;
+    set(h.deValue, 'string', DE);
 
     guidata(hObject, h);
 
@@ -775,10 +778,13 @@ function wellDetectedButton_Callback(hObject, eventdata, handles)
     DisplayImage(myImage, h);
     
 
-    h.WellDetectedGrains = h.SelectedGrain;
+    h.WellDetectedGrains = cat(2, h.WellDetectedGrains, h.SelectedGrain);
 
     h.SelectedGrain = [];
     DisplayContours(h.resultImage, h);
+
+    DA = (length(h.WellDetectedGrains) / h.Params.Number) * 100;
+    set(h.daValue, 'string', DA);
 
     guidata(hObject, h);
 
