@@ -60,6 +60,8 @@ function bin_ui_OpeningFcn(hObject, ~, h, varargin)
     contents = cellstr(get(h.imagesList,'String'));
     h.selectedImage = contents{get(h.imagesList,'Value')};
     h.SelectedGrain = [];
+    h.ClearlyVisibleGrains = [];
+    h.WellDetectedGrains = [];
 
     contents = cellstr(h.imagesList.String);
     fileName = GetFullPath(char(contents(1)), h.imageStructs);
@@ -99,6 +101,11 @@ function OtsuFlag_Callback(hObject, ~, h)
 % --- Executes on button press in refreshBtn.
 function RefreshBtn_Callback(hObject, ~)
     h = guidata(hObject);
+
+    h.ClearlyVisibleGrains = [];
+    h.SelectedGrain = [];
+    h.WellDetectedGrains = [];
+    guidata(hObject, h);
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     
     radius = Get(h.radiusVal);
@@ -309,13 +316,24 @@ function DisplayContours(image, h)
 
     for k = 1:length(B)
         boundary = B{k}.*scale;
-        plot(boundary(:,2),boundary(:,1),'y','LineWidth',2)
+        plot(boundary(:,2),boundary(:,1),'r','LineWidth',2)
     end
 
     for i = 1:length(h.SelectedGrain)
         boundary = B{h.SelectedGrain(i)}.*scale;
         plot(boundary(:,2),boundary(:,1),'b','LineWidth',2)
     end
+
+    for i = 1:length(h.ClearlyVisibleGrains)
+        boundary = B{h.ClearlyVisibleGrains(i)}.*scale;
+        plot(boundary(:,2),boundary(:,1),'y','LineWidth',2)
+    end
+
+    for i = 1:length(h.WellDetectedGrains)
+        boundary = B{h.WellDetectedGrains(i)}.*scale;
+        plot(boundary(:,2),boundary(:,1),'g','LineWidth',2)
+    end
+
 
 
 % --- calculates contours/grains parameters from image
@@ -624,6 +642,8 @@ function deleteGrain_Callback(hObject, ~, ~)
     h = guidata(hObject);
     
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+    h.WellDetectedGrains = [];
+    h.ClearlyVisibleGrains = [];
     
     myImage = imread(fullPath);
     myImage = histeq(myImage);
@@ -700,12 +720,6 @@ function display_ButtonDownFcn(hObject, eventdata)
             if inpolygon(p(1, 1), p(1, 2), B{i}(:,2), B{i}(:,1))
                 h.SelectedGrain(length(h.SelectedGrain) + 1) = i;
 
-                % fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-    
-                % myImage = imread(fullPath);
-                % myImage = histeq(myImage);
-                % DisplayImage(myImage, h);
-            
                 DisplayContours(h.resultImage, h);
             
                 diameter = Pixels2MM(h.Params.DiametersList(i));
@@ -721,5 +735,56 @@ function display_ButtonDownFcn(hObject, eventdata)
 
 
     end
+
+    guidata(hObject, h);
+
+
+% --- Executes on button press in clearlyVisibleButton.
+function clearlyVisibleButton_Callback(hObject, eventdata, handles)
+    h = guidata(hObject);
+    
+    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+    
+    myImage = imread(fullPath);
+    myImage = histeq(myImage);
+    DisplayImage(myImage, h);
+    
+
+    h.ClearlyVisibleGrains = h.SelectedGrain;
+
+    h.SelectedGrain = [];
+    DisplayContours(h.resultImage, h);
+
+    guidata(hObject, h);
+
+    CalculateParams(h.resultImage, hObject);
+    h = guidata(hObject);
+
+    DisplayData(hObject);
+
+    guidata(hObject, h);
+
+% --- Executes on button press in wellDetectedButton.
+function wellDetectedButton_Callback(hObject, eventdata, handles)
+    h = guidata(hObject);
+    
+    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+    
+    myImage = imread(fullPath);
+    myImage = histeq(myImage);
+    DisplayImage(myImage, h);
+    
+
+    h.WellDetectedGrains = h.SelectedGrain;
+
+    h.SelectedGrain = [];
+    DisplayContours(h.resultImage, h);
+
+    guidata(hObject, h);
+
+    CalculateParams(h.resultImage, hObject);
+    h = guidata(hObject);
+
+    DisplayData(hObject);
 
     guidata(hObject, h);
