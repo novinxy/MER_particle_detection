@@ -28,10 +28,15 @@ function bin_ui_OpeningFcn(hObject, ~, h, varargin)
     set(h.binarizationFlag, 'Value', true);
     BinarizationFlag_Callback(h);
 
+
+    % -- distribution
+    pd = makedist('Normal');
+    x = {'<0.5', '>0.5', '>0.7', '>1.0', '>1.4', '>2.0', '>2.8', '4.0'};
     axes(h.granulometric);
-    set(h.granulometric.XLabel, 'String', 'Diameter [mm]');
-    set(h.granulometric.YLabel, 'String', 'Cumulative [%]');
-    set(gca,'XLim',[0 2],'YLim',[0 100]);
+    y = [0 0 0 0 0 0 0 0];
+    bar(y);
+    set(gca,'YLim',[0 100]);
+    set(gca,'xticklabel',x)
 
     rootdir = 'Images';
     filelist = dir(fullfile(rootdir, '**\*.*'));  %get list of files and folders in any subfolder
@@ -60,7 +65,6 @@ function bin_ui_OpeningFcn(hObject, ~, h, varargin)
     contents = cellstr(get(h.imagesList,'String'));
     h.selectedImage = contents{get(h.imagesList,'Value')};
     h.SelectedGrain = [];
-    h.ClearlyVisibleGrains = [];
     h.WellDetectedGrains = [];
 
     contents = cellstr(h.imagesList.String);
@@ -102,7 +106,6 @@ function OtsuFlag_Callback(hObject, ~, h)
 function RefreshBtn_Callback(hObject, ~)
     h = guidata(hObject);
 
-    h.ClearlyVisibleGrains = [];
     h.SelectedGrain = [];
     h.WellDetectedGrains = [];
     guidata(hObject, h);
@@ -324,11 +327,6 @@ function DisplayContours(image, h)
         plot(boundary(:,2),boundary(:,1),'b','LineWidth',2)
     end
 
-    for i = 1:length(h.ClearlyVisibleGrains)
-        boundary = B{h.ClearlyVisibleGrains(i)}.*scale;
-        plot(boundary(:,2),boundary(:,1),'y','LineWidth',2)
-    end
-
     for i = 1:length(h.WellDetectedGrains)
         boundary = B{h.WellDetectedGrains(i)}.*scale;
         plot(boundary(:,2),boundary(:,1),'g','LineWidth',2)
@@ -376,15 +374,55 @@ function CalculateParams(img,  hObject)
 
     % -- distribution
     pd = makedist('Normal');
-    values = sort(Pixels2MM(diameters));
-    y = cdf(pd, sort(Pixels2MM(diameters)));
+    x = {'<0.5', '>0.5', '>0.7', '>1.0', '>1.4', '>2.0', '>2.8', '4.0'};
+
+    y = [60 3 1 10 7 5 20 14];
+    y = CreateBarsValues(Pixels2MM(diameters));
     axes(h.granulometric);
-    plot(values, y.*100);
-    set(h.granulometric.XLabel, 'String', 'Diameter [mm]');
-    set(h.granulometric.YLabel, 'String', 'Cumulative [%]');
-    set(gca,'XLim',[0 2]);
+    bar(y);
+    set(gca,'xticklabel',x)
 
     guidata(hObject, h);
+
+
+% --- Creates
+function values = CreateBarsValues(diameters)
+    values = zeros(1, 8);
+    for i = 1 : length(diameters)
+        if diameters(i) < 0.5
+            values(1) = values(1) + 1;
+            continue;
+        end
+        if diameters(i) >= 0.5 && diameters(i) < 0.7 
+            values(2) = values(2) + 1;
+            continue;
+        end
+        if diameters(i) >= 0.7 && diameters(i) < 1.0 
+            values(3) = values(3) + 1;
+            continue;
+        end
+        if diameters(i) >= 1.0 && diameters(i) < 1.4 
+            values(4) = values(4) + 1;
+            continue;
+        end
+        if diameters(i) >= 1.4 && diameters(i) < 2.0 
+            values(5) = values(5) + 1;
+            continue;
+        end
+        if diameters(i) >= 2.0 && diameters(i) < 2.8 
+            values(6) = values(6) + 1;
+            continue;
+        end
+        if diameters(i) >= 2.8 && diameters(i) < 4.0 
+            values(7) = values(7) + 1;
+            continue;
+        end
+        if diameters(i) >= 4.0 
+            values(8) = values(8) + 1;
+            continue;
+        end
+    end
+
 
 
 % --- displays data about detected grains
@@ -423,13 +461,13 @@ function WriteDataToFile(hObject, dataTypes)
     fprintf(file, 'Choosen detection method: ');
     if h.binarizationFlag.Value
         fprintf(file, 'Binarization\n');
-        fprintf(file, '\tMethod was called with parameters:\n');
+        fprintf(file, '\tParameters:\n');
         fprintf(file, '\t\tOpening radius: %g\n', Get(h.radiusVal));
         fprintf(file, '\t\tBinarization threshold: %g\n', Get(h.binThVal));
                         
     elseif h.cannyFlag.Value
         fprintf(file, 'Canny edge detection\n');
-        fprintf(file, '\tMethod was called with parameters:\n');
+        fprintf(file, '\tParameters:\n');
         fprintf(file, '\t\tOpening radius: %g\n', Get(h.radiusVal));
         fprintf(file, '\t\tLow threshold: %g\n', Get(h.lowThVal));
         fprintf(file, '\t\tHigh threshold: %g\n', Get(h.highThVal));
@@ -437,7 +475,7 @@ function WriteDataToFile(hObject, dataTypes)
 
     else h.waterFlag.Value
         fprintf(file, 'Watershed\n');
-        fprintf(file, '\tMethod was called with parameters:\n');
+        fprintf(file, '\tParameters:\n');
         fprintf(file, '\t\tOpening radius: %g\n', Get(h.radiusVal));
         sharpRadius = Get(h.sharpRadiusVal);
         if h.sharpenRadiusFlag.Value == false
@@ -454,15 +492,17 @@ function WriteDataToFile(hObject, dataTypes)
         
     end
 
-
     fprintf(file, '\nNumber of detected grains: %g\n\n', Get(h.detectedCountVal));
-
+    
     fprintf(file, 'Filter values:\n');
     fprintf(file, '\tMin diameter: %g\n', Get(h.minDiameterVal));
     fprintf(file, '\tMax diameter: %g\n', Get(h.maxDiameterVal));
     fprintf(file, '\tMin circularity: %g\n\n', Get(h.circularityVal));
+    
+    fprintf(file, 'Number of grains after filtering: %g\n', h.Params.Number);
+    
+    fprintf(file, '\nNumber of well detected grains: %g\n\n', length(h.WellDetectedGrains));
 
-    fprintf(file, 'Number of correct grains: %g\n', h.Params.Number);
     fprintf(file, '\nIn pixels:\n');
     dataMatrix = [h.Params.Diameter; h.Params.ShortAxis; h.Params.LongAxis; h.Params.Circularity; h.Params.Ratio];
     for i = 1 : size(dataMatrix, 1)
@@ -643,7 +683,6 @@ function deleteGrain_Callback(hObject, ~, ~)
     
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     h.WellDetectedGrains = [];
-    h.ClearlyVisibleGrains = [];
     
     myImage = imread(fullPath);
     myImage = histeq(myImage);
@@ -739,34 +778,6 @@ function display_ButtonDownFcn(hObject, eventdata)
     guidata(hObject, h);
 
 
-% --- Executes on button press in clearlyVisibleButton.
-function clearlyVisibleButton_Callback(hObject, eventdata, handles)
-    h = guidata(hObject);
-    
-    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-    
-    myImage = imread(fullPath);
-    myImage = histeq(myImage);
-    DisplayImage(myImage, h);
-    
-
-    h.ClearlyVisibleGrains = cat(2, h.ClearlyVisibleGrains, h.SelectedGrain);
-
-    h.SelectedGrain = [];
-    DisplayContours(h.resultImage, h);
-
-    DE = (h.Params.Number/ length(h.ClearlyVisibleGrains)) * 100;
-    set(h.deValue, 'string', DE);
-
-    guidata(hObject, h);
-
-    CalculateParams(h.resultImage, hObject);
-    h = guidata(hObject);
-
-    DisplayData(hObject);
-
-    guidata(hObject, h);
-
 % --- Executes on button press in wellDetectedButton.
 function wellDetectedButton_Callback(hObject, eventdata, handles)
     h = guidata(hObject);
@@ -783,8 +794,7 @@ function wellDetectedButton_Callback(hObject, eventdata, handles)
     h.SelectedGrain = [];
     DisplayContours(h.resultImage, h);
 
-    DA = (length(h.WellDetectedGrains) / h.Params.Number) * 100;
-    set(h.daValue, 'string', DA);
+    set(h.deValue, 'string', length(h.WellDetectedGrains));
 
     guidata(hObject, h);
 
