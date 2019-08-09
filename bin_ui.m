@@ -374,13 +374,13 @@ function CalculateParams(img,  hObject)
 
     % -- distribution
     pd = makedist('Normal');
-    x = {'<0.5', '>0.5', '>0.7', '>1.0', '>1.4', '>2.0', '>2.8', '4.0'};
+    x = {'<0.5', '>0.5', '>0.71', '>1.0', '>1.4', '>2.0', '>2.8', '4.0'};
 
-    y = [60 3 1 10 7 5 20 14];
     y = CreateBarsValues(Pixels2MM(diameters));
+    h.Params.Granulometry = y;
     axes(h.granulometric);
     bar(y);
-    set(gca,'xticklabel',x)
+    set(gca,'xticklabel', x)
 
     guidata(hObject, h);
 
@@ -393,11 +393,11 @@ function values = CreateBarsValues(diameters)
             values(1) = values(1) + 1;
             continue;
         end
-        if diameters(i) >= 0.5 && diameters(i) < 0.7 
+        if diameters(i) >= 0.5 && diameters(i) < 0.71 
             values(2) = values(2) + 1;
             continue;
         end
-        if diameters(i) >= 0.7 && diameters(i) < 1.0 
+        if diameters(i) >= 0.71 && diameters(i) < 1.0 
             values(3) = values(3) + 1;
             continue;
         end
@@ -448,6 +448,30 @@ function convertedVaue = MMs2Pixels(value)
     scale = 0.031;
     convertedVaue = value./ scale;
 
+
+% --- writes grains data to file
+function WriteGranulometryToFile(hObject)
+    h = guidata(hObject);
+
+    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+    splited = split(Create_file_name(fullPath, "granulometry"), '.');
+    fileName = splited(1) + ".txt";
+    file = fopen(fileName, 'wt');
+
+
+    x = {'<0.5', '>0.5', '>0.71', '>1.0', '>1.4', '>2.0', '>2.8', '4.0'};
+
+    fprintf(file, '<0.5: %g\n', h.Params.Granulometry(1));
+    fprintf(file, '0.5>: %g\n', h.Params.Granulometry(2));
+    fprintf(file, '0.71>: %g\n', h.Params.Granulometry(3));
+    fprintf(file, '1.0>: %g\n', h.Params.Granulometry(4));
+    fprintf(file, '1.4>: %g\n', h.Params.Granulometry(5));
+    fprintf(file, '2.0>: %g\n', h.Params.Granulometry(6));
+    fprintf(file, '2.8>: %g\n', h.Params.Granulometry(7));
+    fprintf(file, '4.0: %g\n', h.Params.Granulometry(8));
+                        
+
+    fclose(file);
 
 % --- writes grains data to file
 function WriteDataToFile(hObject, dataTypes)
@@ -712,17 +736,19 @@ function saveButton_Callback(hObject, eventdata, h)
     
     F = getframe(h.display);
     Image = frame2im(F);
-    CreateDictionary(fullPath);
     imwrite(Image, Create_file_name(fullPath, "result_display"));
 
-    F = getframe(h.granulometric);
-    Image = frame2im(F);
-    CreateDictionary(fullPath);
-    imwrite(Image, Create_file_name(fullPath, "distribution"));
+    % F = getframe(h.granulometric);
+    % Image = frame2im(F);
+    % imwrite(Image, Create_file_name(fullPath, "distribution"));
 
+    newfig1 = figure('Visible','off'); 
+    copyobj(h.granulometric, newfig1);
+    saveas(newfig1, Create_file_name(fullPath, "distribution"),'jpg');
 
     WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
     WriteGrainsToFile(hObject);
+    WriteGranulometryToFile(hObject);
 
 
 function ShowOrigin_Callback(hObject, eventdata, h)
@@ -757,7 +783,18 @@ function display_ButtonDownFcn(hObject, eventdata)
         [B, ~] = bwboundaries(h.resultImage,'noholes');
         for i = 1 : length(B)
             if inpolygon(p(1, 1), p(1, 2), B{i}(:,2), B{i}(:,1))
-                h.SelectedGrain(length(h.SelectedGrain) + 1) = i;
+                exist = false;
+                for j = 1 : length(h.SelectedGrain)
+                    if h.SelectedGrain(j) == i
+                        h.SelectedGrain(j) = [];
+                        exist = true;
+                        break;
+                    end
+                end
+                
+                if ~exist
+                    h.SelectedGrain(length(h.SelectedGrain) + 1) = i;
+                end
 
                 DisplayContours(h.resultImage, h);
             
