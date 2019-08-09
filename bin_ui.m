@@ -458,7 +458,7 @@ function WriteDataToFile(hObject, dataTypes)
     h = guidata(hObject);
 
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-    splited = split(Create_file_name(fullPath, "data", h.method), '.');
+    splited = split(Create_file_name(fullPath, "log", h.method), '.');
     fileName = splited(1) + ".txt";
     file = fopen(fileName, 'wt');
 
@@ -566,7 +566,7 @@ function WriteGrainsToFile(hObject)
     h = guidata(hObject);
 
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-    splited = split(Create_file_name(fullPath, "grains", h.method), '.');
+    splited = split(Create_file_name(fullPath, "data", h.method), '.');
     fileName = splited(1) + ".xls";
     
     if isfile(fileName) 
@@ -737,7 +737,7 @@ function saveButton_Callback(hObject, eventdata, h)
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     CreateDictionary(fullPath);
 
-    imwrite(h.resultImage, Create_file_name(fullPath, "result_bin", h.method));
+    imwrite(h.resultImage, Create_file_name(fullPath, "grains", h.method));
     
     F = getframe(h.display);
     Image = frame2im(F);
@@ -745,7 +745,7 @@ function saveButton_Callback(hObject, eventdata, h)
 
     newfig1 = figure('Visible','off'); 
     copyobj(h.granulometric, newfig1);
-    saveas(newfig1, Create_file_name(fullPath, "distribution", h.method),'jpg');
+    saveas(newfig1, Create_file_name(fullPath, "granulometry", h.method),'jpg');
 
     WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
     WriteGrainsToFile(hObject);
