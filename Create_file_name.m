@@ -1,4 +1,4 @@
-function [result_file_name] = Create_file_name(file_name, suffix)
+function [result_file_name] = Create_file_name(file_name, suffix, subdir)
 
     splits2 = split(file_name, '/');
     
@@ -17,6 +17,13 @@ function [result_file_name] = Create_file_name(file_name, suffix)
     end
     
     splits = split(name, '.');
-    result_file_name = splits(1) + "_" + suffix + ".png";
+    
+    if nargin < 3
+        result_file_name = splits(1) + "\" + suffix + ".png";
+    else
+        result_file_name = splits(1) + "\" + subdir + "\" + suffix + ".png";
+    end
+
+    CreateDictionary(result_file_name);
 end
 

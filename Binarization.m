@@ -7,7 +7,7 @@ function [result_img, thresh_level] = Binarization(file_name, log, radius, thres
 
     % save to file
     if log == true
-        imwrite(opening_img, Create_file_name(file_name, "open"));
+        imwrite(opening_img, Create_file_name(file_name, "open", "Binarization\Steps"));
     end
     
     % change to grayscale for JPG
@@ -30,7 +30,7 @@ function [result_img, thresh_level] = Binarization(file_name, log, radius, thres
 
     % save to file
     if log == true
-        imwrite(result_img, Create_file_name(file_name, "bin"))
+        imwrite(result_img, Create_file_name(file_name, "bin", "Binarization\Steps"));
     end
 
 end

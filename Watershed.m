@@ -6,7 +6,7 @@ function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpe
     opening_img = imopen(I, disk_kernel);
 
     if log == true
-        imwrite(opening_img, Create_file_name(file_name, "open"));
+        imwrite(opening_img, Create_file_name(file_name, "open", "Watershed\Steps"));
     end
 
     % change to grayscale for JPG
@@ -33,13 +33,13 @@ function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpe
         end
 
         if log == true
-            imwrite(edge_img, Create_file_name(file_name, "edge"));
+            imwrite(edge_img, Create_file_name(file_name, "edge", "Watershed\Steps"));
         end
 
         % add edge to sharpened img
         added_img = sharpened_img + edge_img;
         if log == true
-            imwrite(added_img, Create_file_name(file_name, "add"));
+            imwrite(added_img, Create_file_name(file_name, "add", "Watershed\Steps"));
         end
 
         % gradient filtering
@@ -47,7 +47,7 @@ function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpe
         gmag = rescale(gmag);
 
         if log == true
-            imwrite(gmag, Create_file_name(file_name, "gradient"));
+            imwrite(gmag, Create_file_name(file_name, "gradient", "Watershed\Steps"));
         end
 
     % FIRST PARALLEL 
@@ -62,7 +62,7 @@ function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpe
         end
         binary_img = imbinarize(sharpened_img, bin_level);
         if log == true
-            imwrite(binary_img, Create_file_name(file_name, "bin"));
+            imwrite(binary_img, Create_file_name(file_name, "bin", "Watershed\Steps"));
         end
 
         % filling holes
@@ -74,7 +74,7 @@ function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpe
 
         filled = imfill(binary_img);
         if log == true
-            imwrite(filled, Create_file_name(file_name, "fill"));
+            imwrite(filled, Create_file_name(file_name, "fill", "Watershed\Steps"));
         end
 
         % distance transform
@@ -83,13 +83,13 @@ function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpe
         % gaussian filtering
         gaussian_img = imgaussfilt(distance_img, gaussian_sigma, 'FilterSize', guassian_filter);
         if log == true
-            imwrite(gaussian_img, Create_file_name(file_name, "gaussian"));
+            imwrite(gaussian_img, Create_file_name(file_name, "gaussian", "Watershed\Steps"));
         end
 
         % Finding markers(MS)/ extended maxima detection
         img = imextendedmax(gaussian_img, 0.001);
         if log == true
-            imwrite(img, Create_file_name(file_name, "MAX"));
+            imwrite(img, Create_file_name(file_name, "MAX", "Watershed\Steps"));
         end
 
     % SECOND PARALLEL 
@@ -99,7 +99,7 @@ function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpe
     combined_img = imimposemin(gmag, img);
     
     if log == true
-        imwrite(combined_img, Create_file_name(file_name, "combined"));
+        imwrite(combined_img, Create_file_name(file_name, "combined", "Watershed\Steps"));
     end
     
     % watershed
@@ -125,7 +125,7 @@ function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpe
     result_img = imfill(result_img);
 
     if log == true
-        imwrite(result_img, Create_file_name(file_name, "result"));
+        imwrite(result_img, Create_file_name(file_name, "result", "Watershed\Steps"));
     end
 
 end

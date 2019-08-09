@@ -7,7 +7,7 @@ function result_img = Canny(file_name, log, radius, thresh, sigma)
 
     % save to file
     if log == true
-        imwrite(opening_img, Create_file_name(file_name, "open"));
+        imwrite(opening_img, Create_file_name(file_name, "open", "Canny\Steps"));
     end
 
     % change to grayscale for JPG
@@ -23,7 +23,7 @@ function result_img = Canny(file_name, log, radius, thresh, sigma)
 
     % save to file
     if log == true
-        imwrite(edge_img, Create_file_name(file_name, "edge"));
+        imwrite(edge_img, Create_file_name(file_name, "edge", "Canny\Steps"));
     end
     
     % filling image
@@ -36,7 +36,7 @@ function result_img = Canny(file_name, log, radius, thresh, sigma)
 
     % save to file
     if log == true
-        imwrite(result_img, Create_file_name(file_name, "result"))
+        imwrite(result_img, Create_file_name(file_name, "result", "Canny\Steps"))
     end
 
 end

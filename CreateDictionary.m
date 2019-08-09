@@ -15,6 +15,7 @@ function CreateDictionary(file_name)
             name = name + "\" + splits2(i);
         end
     end
+
     if ~exist(name, 'dir')
        mkdir(name);
     end

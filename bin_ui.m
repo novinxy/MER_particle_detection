@@ -119,14 +119,18 @@ function RefreshBtn_Callback(hObject, ~)
 
     if h.binarizationFlag.Value
         resultImg = Binarization_Callback(h, fullPath, radius);
+        h.method = "Binarization";
 
     elseif h.cannyFlag.Value
         resultImg = Canny_Callback(h, fullPath, radius);
+        h.method = "Canny";
 
     elseif h.waterFlag.Value
         resultImg = Watershed_Callback(h, fullPath, radius);
+        h.method = "Watershed";
     end
-    
+    guidata(hObject, h);
+
     resultImg = DeleteObjectsBydiameter(resultImg, Get(h.minDiameterVal), Get(h.maxDiameterVal));
     resultImg = DeleteObjectsByCircularity(resultImg, Get(h.circularityVal));
     
@@ -208,7 +212,7 @@ function path = GetFullPath(fileID, imageStructs)
     fileName = char(parts(length(parts)));
 
     for ind=1:length(imageStructs)
-        if strcmp(fileName,imageStructs(ind).name)
+        if strcmp(fileName, imageStructs(ind).name)
             path = strcat(imageStructs(ind).folder, '\', imageStructs(ind).name);
             break;
         end
@@ -454,7 +458,7 @@ function WriteDataToFile(hObject, dataTypes)
     h = guidata(hObject);
 
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-    splited = split(Create_file_name(fullPath, "data"), '.');
+    splited = split(Create_file_name(fullPath, "data", h.method), '.');
     fileName = splited(1) + ".txt";
     file = fopen(fileName, 'wt');
 
@@ -562,7 +566,7 @@ function WriteGrainsToFile(hObject)
     h = guidata(hObject);
 
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-    splited = split(Create_file_name(fullPath, "grains"), '.');
+    splited = split(Create_file_name(fullPath, "grains", h.method), '.');
     fileName = splited(1) + ".xls";
     
     if isfile(fileName) 
@@ -733,19 +737,15 @@ function saveButton_Callback(hObject, eventdata, h)
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     CreateDictionary(fullPath);
 
-    imwrite(h.resultImage, Create_file_name(fullPath, "result_bin"));
+    imwrite(h.resultImage, Create_file_name(fullPath, "result_bin", h.method));
     
     F = getframe(h.display);
     Image = frame2im(F);
-    imwrite(Image, Create_file_name(fullPath, "result_display"));
-
-    % F = getframe(h.granulometric);
-    % Image = frame2im(F);
-    % imwrite(Image, Create_file_name(fullPath, "distribution"));
+    imwrite(Image, Create_file_name(fullPath, "result_display", h.method));
 
     newfig1 = figure('Visible','off'); 
     copyobj(h.granulometric, newfig1);
-    saveas(newfig1, Create_file_name(fullPath, "distribution"),'jpg');
+    saveas(newfig1, Create_file_name(fullPath, "distribution", h.method),'jpg');
 
     WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
     WriteGrainsToFile(hObject);
