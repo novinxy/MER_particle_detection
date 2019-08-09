@@ -450,30 +450,6 @@ function convertedVaue = MMs2Pixels(value)
 
 
 % --- writes grains data to file
-function WriteGranulometryToFile(hObject)
-    h = guidata(hObject);
-
-    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-    splited = split(Create_file_name(fullPath, "granulometry"), '.');
-    fileName = splited(1) + ".txt";
-    file = fopen(fileName, 'wt');
-
-
-    x = {'<0.5', '>0.5', '>0.71', '>1.0', '>1.4', '>2.0', '>2.8', '4.0'};
-
-    fprintf(file, '<0.5: %g\n', h.Params.Granulometry(1));
-    fprintf(file, '0.5>: %g\n', h.Params.Granulometry(2));
-    fprintf(file, '0.71>: %g\n', h.Params.Granulometry(3));
-    fprintf(file, '1.0>: %g\n', h.Params.Granulometry(4));
-    fprintf(file, '1.4>: %g\n', h.Params.Granulometry(5));
-    fprintf(file, '2.0>: %g\n', h.Params.Granulometry(6));
-    fprintf(file, '2.8>: %g\n', h.Params.Granulometry(7));
-    fprintf(file, '4.0: %g\n', h.Params.Granulometry(8));
-                        
-
-    fclose(file);
-
-% --- writes grains data to file
 function WriteDataToFile(hObject, dataTypes)
     h = guidata(hObject);
 
@@ -482,72 +458,101 @@ function WriteDataToFile(hObject, dataTypes)
     fileName = splited(1) + ".txt";
     file = fopen(fileName, 'wt');
 
-    fprintf(file, 'Choosen detection method: ');
+
+    splited = split(h.selectedImage, ' ');
+    imageName = splited(length(splited));
+    fprintf(file, 'Image ID: %s\n', string(imageName)); 
+
+    fprintf(file, 'Method: ');
     if h.binarizationFlag.Value
-        fprintf(file, 'Binarization\n');
-        fprintf(file, '\tParameters:\n');
-        fprintf(file, '\t\tOpening radius: %g\n', Get(h.radiusVal));
-        fprintf(file, '\t\tBinarization threshold: %g\n', Get(h.binThVal));
+        fprintf(file, 'Binarization\n\n');
+        fprintf(file, '----------------\n');
+        fprintf(file, 'Method parameters:\n');
+        fprintf(file, 'Opening radius: %g\n', Get(h.radiusVal));
+        fprintf(file, 'Binarization threshold: %g\n', Get(h.binThVal));
                         
     elseif h.cannyFlag.Value
         fprintf(file, 'Canny edge detection\n');
-        fprintf(file, '\tParameters:\n');
-        fprintf(file, '\t\tOpening radius: %g\n', Get(h.radiusVal));
-        fprintf(file, '\t\tLow threshold: %g\n', Get(h.lowThVal));
-        fprintf(file, '\t\tHigh threshold: %g\n', Get(h.highThVal));
-        fprintf(file, '\t\tSigma: %g\n', Get(h.sigmaVal));
+        fprintf(file, '----------------\n');
+        fprintf(file, 'Method parameters:\n');
+        fprintf(file, 'Opening radius: %g\n', Get(h.radiusVal));
+        fprintf(file, 'Low threshold: %g\n', Get(h.lowThVal));
+        fprintf(file, 'High threshold: %g\n', Get(h.highThVal));
+        fprintf(file, 'Sigma: %g\n', Get(h.sigmaVal));
 
     else h.waterFlag.Value
         fprintf(file, 'Watershed\n');
-        fprintf(file, '\tParameters:\n');
-        fprintf(file, '\t\tOpening radius: %g\n', Get(h.radiusVal));
+        fprintf(file, '----------------\n');
+        fprintf(file, 'Method parameters:\n');
+        fprintf(file, 'Opening radius: %g\n', Get(h.radiusVal));
         sharpRadius = Get(h.sharpRadiusVal);
         if h.sharpenRadiusFlag.Value == false
             sharpRadius = 0;
         end
 
-        fprintf(file, '\t\tSharpening radius: %g\n', sharpRadius);
-        fprintf(file, '\t\tLow threshold: %g\n', Get(h.waterLowThVal));
-        fprintf(file, '\t\tHigh threshold: %g\n', Get(h.waterHighThVal));
-        fprintf(file, '\t\tSigma: %g\n', Get(h.waterSigmaVal));
-        fprintf(file, '\t\tGaussian filtering sigma: %g\n', Get(h.gaussSigmaVal));
-        fprintf(file, '\t\tGaussian filtering size: %g\n', Get(h.filterVal));
-        fprintf(file, '\t\tBinarization threshold: %g\n', Get(h.binWaterThVal));
+        fprintf(file, 'Sharpening radius: %g\n', sharpRadius);
+        fprintf(file, 'Low threshold: %g\n', Get(h.waterLowThVal));
+        fprintf(file, 'High threshold: %g\n', Get(h.waterHighThVal));
+        fprintf(file, 'Sigma: %g\n', Get(h.waterSigmaVal));
+        fprintf(file, 'Gaussian filtering sigma: %g\n', Get(h.gaussSigmaVal));
+        fprintf(file, 'Gaussian filtering size: %g\n', Get(h.filterVal));
+        fprintf(file, 'Binarization threshold: %g\n', Get(h.binWaterThVal));
         
     end
 
-    fprintf(file, '\nNumber of detected grains: %g\n\n', Get(h.detectedCountVal));
-    
-    fprintf(file, 'Filter values:\n');
-    fprintf(file, '\tMin diameter: %g\n', Get(h.minDiameterVal));
-    fprintf(file, '\tMax diameter: %g\n', Get(h.maxDiameterVal));
-    fprintf(file, '\tMin circularity: %g\n\n', Get(h.circularityVal));
-    
-    fprintf(file, 'Number of grains after filtering: %g\n', h.Params.Number);
-    
-    fprintf(file, '\nNumber of well detected grains: %g\n\n', length(h.WellDetectedGrains));
+    fprintf(file, '\n----------------\n');
 
-    fprintf(file, '\nIn pixels:\n');
+    
+    fprintf(file, 'Filtering:\n');
+    fprintf(file, 'Min diameter: %g\n', Get(h.minDiameterVal));
+    fprintf(file, 'Max diameter: %g\n', Get(h.maxDiameterVal));
+    fprintf(file, 'Min circularity: %g\n\n', Get(h.circularityVal));
+    
+
+    fprintf(file, '----------------\n');
+    fprintf(file, 'Number of detected grains: %g\n', Get(h.detectedCountVal));
+    fprintf(file, 'Number of grains after filtering: %g\n', h.Params.Number);
+    fprintf(file, 'Number of well detected grains: %g\n', length(h.WellDetectedGrains));
+
+    fprintf(file, '\n----------------\n');
+    fprintf(file, 'In pixels:\n');
+    fprintf(file, 'Median\nMean\nStandard devation\n\n');
     dataMatrix = [h.Params.Diameter; h.Params.ShortAxis; h.Params.LongAxis; h.Params.Circularity; h.Params.Ratio];
     for i = 1 : size(dataMatrix, 1)
         data = dataMatrix(i,:);
         fprintf(file, '%s:\n', dataTypes(i));
-        fprintf(file, '\tMedian: %g\n', data(1));
-        fprintf(file, '\tMean: %g\n', data(2));
-        fprintf(file, '\tStandard devation: %g\n', data(3));     
+        fprintf(file, '%g\n', data(1));
+        fprintf(file, '%g\n', data(2));
+        fprintf(file, '%g\n', data(3));     
         fprintf(file, '\n');
     end
 
-    fprintf(file, '\nIn MMs:\n');
+    fprintf(file, '----------------\n');
+    fprintf(file, 'In MMs:\n');
+    fprintf(file, 'Median\nMean\nStandard devation\n\n');
     dataMatrix = [Pixels2MM(h.Params.Diameter); Pixels2MM(h.Params.ShortAxis); Pixels2MM(h.Params.LongAxis); h.Params.Circularity; h.Params.Ratio];
     for i = 1 : size(dataMatrix, 1)
         data = dataMatrix(i,:);
         fprintf(file, '%s:\n', dataTypes(i));
-        fprintf(file, '\tMedian: %g\n', data(1));
-        fprintf(file, '\tMean: %g\n', data(2));
-        fprintf(file, '\tStandard devation: %g\n', data(3));     
+        fprintf(file, '%g\n', data(1));
+        fprintf(file, '%g\n', data(2));
+        fprintf(file, '%g\n', data(3));     
         fprintf(file, '\n');
     end
+
+    x = {'<0.5', '>0.5', '>0.71', '>1.0', '>1.4', '>2.0', '>2.8', '4.0'};
+
+    fprintf(file, '\n-----------------------------------------\n');
+    fprintf(file, 'Granulometry data:\n');
+    fprintf(file, '\n');
+    fprintf(file, '< 0.5\t:\t%g\n', h.Params.Granulometry(1));
+    fprintf(file, '0.5 >=\t:\t%g\n', h.Params.Granulometry(2));
+    fprintf(file, '0.71 >=\t:\t%g\n', h.Params.Granulometry(3));
+    fprintf(file, '1.0 >=\t:\t%g\n', h.Params.Granulometry(4));
+    fprintf(file, '1.4 >=\t:\t%g\n', h.Params.Granulometry(5));
+    fprintf(file, '2.0 >=\t:\t%g\n', h.Params.Granulometry(6));
+    fprintf(file, '2.8 >=\t:\t%g\n', h.Params.Granulometry(7));
+    fprintf(file, '4.0 >=\t:\t%g\n', h.Params.Granulometry(8));
 
     fclose(file);
 
@@ -558,26 +563,22 @@ function WriteGrainsToFile(hObject)
 
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     splited = split(Create_file_name(fullPath, "grains"), '.');
-    fileName = splited(1) + ".txt";
-    file = fopen(fileName, 'wt');
-
-    dataMatrix = zeros(h.Params.Number, 7);
-    dataMatrix(:,1) = 1: 1: h.Params.Number;
-    dataMatrix(:,2) = h.Params.DiametersList;
-    dataMatrix(:,3) = h.Params.Perimeters;
-    dataMatrix(:,4) = h.Params.Area;
-    dataMatrix(:,5) = h.Params.ShortAxisList;
-    dataMatrix(:,6) = h.Params.LongAxisList;
-    dataMatrix(:,7) = h.Params.CircularityList;
-
-    fprintf(file, 'Index\t  EquivDiameter\t  Perimeter\t\t  Area\t\t  MinorAxis\t\t  MajorAxis\t\t  Circularity\n'); 
-    for i = 1 : size(dataMatrix, 1)
-        data = dataMatrix(i,:);
-        fprintf(file, '%g\t\t  ', data);     
-        fprintf(file, '\n');
+    fileName = splited(1) + ".xls";
+    
+    if isfile(fileName) 
+        delete(fileName);
     end
 
-    fclose(file);
+    Index = [1:1:h.Params.Number].';
+    EquivDiameter = h.Params.DiametersList.';
+    Perimeter = h.Params.Perimeters.';
+    Area = h.Params.Area.';
+    MinorAxis = h.Params.ShortAxisList.';
+    MajorAxis = h.Params.LongAxisList.';
+    Circularity = h.Params.CircularityList.';
+    T = table(Index, EquivDiameter, Perimeter, Area, MinorAxis, MajorAxis, Circularity);
+    writetable(T, fileName);
+
 
 % --- Executes on button press in metric2PixelToggle.
 function ToMetrics_Callback(hObject)
@@ -748,7 +749,6 @@ function saveButton_Callback(hObject, eventdata, h)
 
     WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
     WriteGrainsToFile(hObject);
-    WriteGranulometryToFile(hObject);
 
 
 function ShowOrigin_Callback(hObject, eventdata, h)
