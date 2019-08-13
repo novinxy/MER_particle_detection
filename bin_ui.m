@@ -65,6 +65,7 @@ function bin_ui_OpeningFcn(hObject, ~, h, varargin)
     contents = cellstr(get(h.imagesList,'String'));
     h.selectedImage = contents{get(h.imagesList,'Value')};
     h.SelectedGrain = [];
+    h.GrainsDeletedManualy = 0;
     h.WellDetectedGrains = [];
 
     contents = cellstr(h.imagesList.String);
@@ -512,8 +513,10 @@ function WriteDataToFile(hObject, dataTypes)
     fprintf(file, 'Max diameter: %g\n', Get(h.maxDiameterVal));
     fprintf(file, 'Min circularity: %g\n\n', Get(h.circularityVal));
     
+    fprintf(file, '\n----------------\n');
+    fprintf(file, 'Num of manualy deleted grains: %g\n\n', h.GrainsDeletedManualy);
 
-    fprintf(file, '----------------\n');
+    fprintf(file, '\n----------------\n');
     fprintf(file, 'Number of detected grains: %g\n', Get(h.detectedCountVal));
     fprintf(file, 'Number of grains after filtering: %g\n', h.Params.Number);
     fprintf(file, 'Number of well detected grains: %g\n', length(h.WellDetectedGrains));
@@ -719,6 +722,7 @@ function deleteGrain_Callback(hObject, ~, ~)
     
     h.resultImage = DeleteObjectByIndex(h.resultImage, h.SelectedGrain);
 
+    h.GrainsDeletedManualy = h.GrainsDeletedManualy + length(h.SelectedGrain);
     h.SelectedGrain = [];
     DisplayContours(h.resultImage, h);
 
