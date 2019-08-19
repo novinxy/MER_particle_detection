@@ -72,7 +72,7 @@ function bin_ui_OpeningFcn(hObject, ~, h, varargin)
     fileName = GetFullPath(char(contents(1)), h.imageStructs);
     
     myImage = imread(fileName);
-    myImage = histeq(myImage);
+    % myImage = histeq(myImage);
 
     DisplayImage(myImage, h);
 
@@ -107,9 +107,13 @@ function OtsuFlag_Callback(hObject, ~, h)
 function RefreshBtn_Callback(hObject, ~)
     h = guidata(hObject);
 
+    cla;
     h.SelectedGrain = [];
     h.WellDetectedGrains = [];
+    h.GrainsDeletedManualy = 0;
+
     guidata(hObject, h);
+    
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     
     radius = Get(h.radiusVal);
@@ -140,7 +144,6 @@ function RefreshBtn_Callback(hObject, ~)
         DisplayImage(resultImg, h);
     else
         myImage = imread(fullPath);
-        myImage = histeq(myImage);
         DisplayImage(myImage, h);
     end
     
@@ -150,8 +153,6 @@ function RefreshBtn_Callback(hObject, ~)
     h = guidata(hObject);
     set(h.detectedCountVal, 'string', h.Params.Number);
     DisplayData(hObject);
-
-%     guidata(hObject, h);
 
 
 % --- Executes on button press in binarizationFlag.
@@ -199,7 +200,7 @@ function ImagesList_Callback(hObject, ~)
     
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     myImage = imread(fullPath);
-    myImage = histeq(myImage);
+    % myImage = histeq(myImage);
     DisplayImage(myImage, h);
     guidata(hObject, h);
 
@@ -313,11 +314,10 @@ function [success, value] = TryGet(handle, predicate, errMsg)
 % --- Displays contours on scaled image
 function DisplayContours(image, h)
     hold on;
-    % displayImage = FitToAxes(image, h);
+
     displayImage = image;
-    [B, ~] = bwboundaries(displayImage,'noholes');
-    
-    
+    [B, ~] = bwboundaries(displayImage, 'noholes');
+      
     set(h.display ,'Units','pixels');
     resizePos = get(h.display ,'Position');
     scale = resizePos(3) / 1024;
@@ -325,11 +325,6 @@ function DisplayContours(image, h)
     for k = 1:length(B)
         boundary = B{k}.*scale;
         plot(boundary(:,2),boundary(:,1),'r','LineWidth',2)
-    end
-
-    for i = 1:length(h.SelectedGrain)
-        boundary = B{h.SelectedGrain(i)}.*scale;
-        plot(boundary(:,2),boundary(:,1),'b','LineWidth',2)
     end
 
     for i = 1:length(h.WellDetectedGrains)
@@ -717,7 +712,6 @@ function deleteGrain_Callback(hObject, ~, ~)
     h.WellDetectedGrains = [];
     
     myImage = imread(fullPath);
-    myImage = histeq(myImage);
     DisplayImage(myImage, h);
     
     h.resultImage = DeleteObjectByIndex(h.resultImage, h.SelectedGrain);
@@ -762,7 +756,6 @@ function ShowOrigin_Callback(hObject, eventdata, h)
     else
         fullPath = GetFullPath(h.selectedImage, h.imageStructs);
         myImage = imread(fullPath);
-        myImage = histeq(myImage);
         DisplayImage(myImage, h);
     end
 
@@ -782,14 +775,18 @@ function display_ButtonDownFcn(hObject, eventdata)
     p = get(h.display, 'currentpoint');
     p = p.*scale;
 
-    resultImageExist = isfield(h, 'resultImage') && length(ishandle(h.resultImage)) > 0;
+    
+    resultImageExist = isfield(h, 'resultImage') && ~isempty(ishandle(h.resultImage));
     if resultImageExist
-        [B, ~] = bwboundaries(h.resultImage,'noholes');
+        [B, ~] = bwboundaries(h.resultImage, 'noholes');
         for i = 1 : length(B)
             if inpolygon(p(1, 1), p(1, 2), B{i}(:,2), B{i}(:,1))
                 exist = false;
                 for j = 1 : length(h.SelectedGrain)
                     if h.SelectedGrain(j) == i
+                        scale2 = resizePos(3) / 1024;
+                        boundary = B{i}.*scale2;
+                        plot(boundary(:,2),boundary(:,1),'r','LineWidth',2)
                         h.SelectedGrain(j) = [];
                         exist = true;
                         break;
@@ -797,10 +794,12 @@ function display_ButtonDownFcn(hObject, eventdata)
                 end
                 
                 if ~exist
+                    hold on;
+                    scale2 = resizePos(3) / 1024;
                     h.SelectedGrain(length(h.SelectedGrain) + 1) = i;
+                    boundary = B{i}.*scale2;
+                    plot(boundary(:,2),boundary(:,1),'b','LineWidth',2)
                 end
-
-                DisplayContours(h.resultImage, h);
             
                 diameter = Pixels2MM(h.Params.DiametersList(i));
                 shortAxis = Pixels2MM(h.Params.ShortAxisList(i));
@@ -812,28 +811,34 @@ function display_ButtonDownFcn(hObject, eventdata)
                 break;
             end
         end
-
-
+        
     end
 
     guidata(hObject, h);
 
 
 % --- Executes on button press in wellDetectedButton.
-function wellDetectedButton_Callback(hObject, eventdata, handles)
+function wellDetectedButton_Callback(hObject)
     h = guidata(hObject);
     
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     
     myImage = imread(fullPath);
-    myImage = histeq(myImage);
-    DisplayImage(myImage, h);
-    
 
     h.WellDetectedGrains = cat(2, h.WellDetectedGrains, h.SelectedGrain);
-
     h.SelectedGrain = [];
-    DisplayContours(h.resultImage, h);
+    
+    [B, ~] = bwboundaries(h.resultImage, 'noholes');
+      
+    set(h.display ,'Units','pixels');
+    resizePos = get(h.display ,'Position');
+    scale = resizePos(3) / 1024;
+
+    for i = 1:length(h.WellDetectedGrains)
+        boundary = B{h.WellDetectedGrains(i)}.*scale;
+        plot(boundary(:,2),boundary(:,1),'g','LineWidth',2)
+    end
+    
 
     set(h.deValue, 'string', length(h.WellDetectedGrains));
 
