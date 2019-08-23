@@ -198,9 +198,9 @@ function ImagesList_Callback(hObject, ~)
     contents = cellstr(get(h.imagesList,'String'));
     h.selectedImage = contents{get(h.imagesList, 'Value')};
     
+    cla;
     fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     myImage = imread(fullPath);
-    % myImage = histeq(myImage);
     DisplayImage(myImage, h);
     guidata(hObject, h);
 
