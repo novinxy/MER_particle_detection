@@ -107,6 +107,10 @@ function OtsuFlag_Callback(hObject, ~, h)
 function RefreshBtn_Callback(hObject, ~)
     h = guidata(hObject);
 
+    h = guidata(hObject);
+
+    set(h.refreshBtn, 'BackgroundColor', [0.940000000000000	0.940000000000000	0.940000000000000]);
+
     cla;
     h.SelectedGrain = [];
     h.WellDetectedGrains = [];
@@ -153,6 +157,7 @@ function RefreshBtn_Callback(hObject, ~)
     h = guidata(hObject);
     set(h.detectedCountVal, 'string', h.Params.Number);
     DisplayData(hObject);
+    set(h.refreshBtn, 'BackgroundColor', [0.301960784313725	0.745098039215686	0.933333333333333]);
 
 
 % --- Executes on button press in binarizationFlag.
