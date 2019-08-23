@@ -68,6 +68,8 @@ function bin_ui_OpeningFcn(hObject, ~, h, varargin)
     h.GrainsDeletedManualy = 0;
     h.WellDetectedGrains = [];
 
+    h.displayContours = true;
+
     contents = cellstr(h.imagesList.String);
     fileName = GetFullPath(char(contents(1)), h.imageStructs);
     
@@ -115,6 +117,7 @@ function RefreshBtn_Callback(hObject, ~)
     h.SelectedGrain = [];
     h.WellDetectedGrains = [];
     h.GrainsDeletedManualy = 0;
+    
 
     guidata(hObject, h);
     
@@ -320,21 +323,23 @@ function [success, value] = TryGet(handle, predicate, errMsg)
 function DisplayContours(image, h)
     hold on;
 
-    displayImage = image;
-    [B, ~] = bwboundaries(displayImage, 'noholes');
-      
-    set(h.display ,'Units','pixels');
-    resizePos = get(h.display ,'Position');
-    scale = resizePos(3) / 1024;
+    if h.displayContours == true
+        displayImage = image;
+        [B, ~] = bwboundaries(displayImage, 'noholes');
+        
+        set(h.display ,'Units','pixels');
+        resizePos = get(h.display ,'Position');
+        scale = resizePos(3) / 1024;
 
-    for k = 1:length(B)
-        boundary = B{k}.*scale;
-        plot(boundary(:,2),boundary(:,1),'r','LineWidth',2)
-    end
+        for k = 1:length(B)
+            boundary = B{k}.*scale;
+            plot(h.display, boundary(:,2),boundary(:,1),'r','LineWidth',2)
+        end
 
-    for i = 1:length(h.WellDetectedGrains)
-        boundary = B{h.WellDetectedGrains(i)}.*scale;
-        plot(boundary(:,2),boundary(:,1),'g','LineWidth',2)
+        for i = 1:length(h.WellDetectedGrains)
+            boundary = B{h.WellDetectedGrains(i)}.*scale;
+            plot(h.display, boundary(:,2),boundary(:,1),'g','LineWidth',2)
+        end
     end
 
 
@@ -855,3 +860,27 @@ function wellDetectedButton_Callback(hObject)
     DisplayData(hObject);
 
     guidata(hObject, h);
+
+
+% --- Executes on button press in displayContoursCheckbox.
+function displayContoursCheckbox_Callback(hObject, eventdata, h)
+% hObject    handle to displayContoursCheckbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of displayContoursCheckbox
+    toggleContours = get(hObject, 'Value');
+
+    if toggleContours == 0
+        cla(h.display);
+        fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+        myImage = imread(fullPath);
+        DisplayImage(myImage, h);
+        h.displayContours = false;
+    else
+        h.displayContours = true;
+        guidata(hObject, h);
+        DisplayContours(h.resultImage, h);
+    end
+    guidata(hObject, h);
+
