@@ -340,6 +340,11 @@ function DisplayContours(image, h)
             boundary = B{h.WellDetectedGrains(i)}.*scale;
             plot(h.display, boundary(:,2),boundary(:,1),'g','LineWidth',2)
         end
+
+        for j = 1:length(h.SelectedGrain)
+            boundary = B{h.SelectedGrain(j)}.*scale;
+            plot(boundary(:,2),boundary(:,1),'b','LineWidth',2)
+        end
     end
 
 
@@ -864,11 +869,6 @@ function wellDetectedButton_Callback(hObject)
 
 % --- Executes on button press in displayContoursCheckbox.
 function displayContoursCheckbox_Callback(hObject, eventdata, h)
-% hObject    handle to displayContoursCheckbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of displayContoursCheckbox
     toggleContours = get(hObject, 'Value');
 
     if toggleContours == 0
