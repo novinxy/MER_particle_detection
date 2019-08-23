@@ -883,4 +883,3 @@ function displayContoursCheckbox_Callback(hObject, eventdata, h)
         DisplayContours(h.resultImage, h);
     end
     guidata(hObject, h);
-
