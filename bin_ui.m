@@ -343,7 +343,7 @@ function DisplayContours(image, h)
 
         for j = 1:length(h.SelectedGrain)
             boundary = B{h.SelectedGrain(j)}.*scale;
-            plot(boundary(:,2),boundary(:,1),'b','LineWidth',2)
+            plot(h.display, boundary(:,2),boundary(:,1),'b','LineWidth',2)
         end
     end
 
@@ -392,7 +392,9 @@ function CalculateParams(img,  hObject)
     x = {'<0.5', '>0.5', '>0.71', '>1.0', '>1.4', '>2.0', '>2.8', '4.0'};
 
     y = CreateBarsValues(Pixels2MM(diameters));
+    h.Params.Granulometry = [];
     h.Params.Granulometry = y;
+    cla(h.granulometric);
     axes(h.granulometric);
     bar(y);
     set(gca,'xticklabel', x)
@@ -801,7 +803,7 @@ function display_ButtonDownFcn(hObject, eventdata)
                     if h.SelectedGrain(j) == i
                         scale2 = resizePos(3) / 1024;
                         boundary = B{i}.*scale2;
-                        plot(boundary(:,2),boundary(:,1),'r','LineWidth',2)
+                        plot(h.display, boundary(:,2),boundary(:,1),'r','LineWidth',2)
                         h.SelectedGrain(j) = [];
                         exist = true;
                         break;
@@ -813,7 +815,7 @@ function display_ButtonDownFcn(hObject, eventdata)
                     scale2 = resizePos(3) / 1024;
                     h.SelectedGrain(length(h.SelectedGrain) + 1) = i;
                     boundary = B{i}.*scale2;
-                    plot(boundary(:,2),boundary(:,1),'b','LineWidth',2)
+                    plot(h.display, boundary(:,2),boundary(:,1),'b','LineWidth',2)
                 end
             
                 diameter = Pixels2MM(h.Params.DiametersList(i));
@@ -851,7 +853,7 @@ function wellDetectedButton_Callback(hObject)
 
     for i = 1:length(h.WellDetectedGrains)
         boundary = B{h.WellDetectedGrains(i)}.*scale;
-        plot(boundary(:,2),boundary(:,1),'g','LineWidth',2)
+        plot(h.display, boundary(:,2),boundary(:,1),'g','LineWidth',2)
     end
     
 
