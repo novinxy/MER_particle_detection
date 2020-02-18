@@ -20,17 +20,16 @@ function varargout = bin_ui(varargin)
 
 % --- Executes just before bin_ui is made visible.
 function bin_ui_OpeningFcn(hObject, ~, h, varargin)
-    set(h.pixelsPanel, 'Visible', 'off');
+    set(h.pixelsPanel,  'Visible', 'off');
+    set(h.grainsPanel,  'Visible', 'off');
     set(h.metricsPanel, 'Visible', 'on');
-    set(h.statsPanel, 'Visible', 'on');
-    set(h.grainsPanel, 'Visible', 'off');
+    set(h.statsPanel,   'Visible', 'on');
 
     set(h.binarizationFlag, 'Value', true);
     BinarizationFlag_Callback(h);
 
 
     % -- distribution
-    pd = makedist('Normal');
     x = {'<0.5', '>0.5', '>0.7', '>1.0', '>1.4', '>2.0', '>2.8', '4.0'};
     axes(h.granulometric);
     y = [0 0 0 0 0 0 0 0];
@@ -38,53 +37,37 @@ function bin_ui_OpeningFcn(hObject, ~, h, varargin)
     set(gca,'YLim',[0 100]);
     set(gca,'xticklabel',x)
 
-    rootdir = 'Images';
-    filelist = dir(fullfile(rootdir, '**\*.*'));  %get list of files and folders in any subfolder
-    filelist = filelist(~[filelist.isdir]);  %remove folders from list
+    rootDirectory = 'Images';
+    searchPath = Path.Combine(rootDirectory, "**\*.*");
+    fileList = Directory.GetFiles(searchPath);
     
-    for ind=1:length(filelist)
-        splitted = strsplit(filelist(ind).folder, '\');
-        solFolder = splitted(length(splitted));
-        if contains(solFolder, 'sol')
-            fileName = strcat(solFolder, "    ", filelist(ind).name);
-        else
-            fileName = filelist(ind).name;
-        end
-        fileNames{ind} = fileName; %compile cell array of names.
-    end
-    
-    h.imageStructs = filelist;
-    set(h.otsuFlag, 'value', true);
-    set(h.otsuWaterFlag, 'value', true);
-    set(h.sharpenRadiusFlag, 'value', true);
-    set(h.sharpRadiusVal, 'enable', 'on');
-    set(h.binThVal, 'enable', 'off');
-    set(h.binWaterThVal, 'enable', 'off');
-    set(h.imagesList, 'string', fileNames);
+    h.imageInfoContainer = ImageInfoContainer(fileList);
 
-    contents = cellstr(get(h.imagesList,'String'));
-    h.selectedImage = contents{get(h.imagesList,'Value')};
+    set(h.otsuFlag,             'value', true);
+    set(h.otsuWaterFlag,        'value', true);
+    set(h.sharpenRadiusFlag,    'value', true);
+    set(h.sharpRadiusVal,       'enable', 'on');
+    set(h.binThVal,             'enable', 'off');
+    set(h.binWaterThVal,        'enable', 'off');
+    set(h.imagesList,           'string', h.imageInfoContainer.GetAllImageIdentifiers());
+
     h.SelectedGrain = [];
     h.GrainsDeletedManualy = 0;
     h.WellDetectedGrains = [];
 
     h.displayContours = true;
 
-    contents = cellstr(h.imagesList.String);
-    fileName = GetFullPath(char(contents(1)), h.imageStructs);
+    imageInfo = h.imageInfoContainer.GetSelectedImageInfo();
     
-    myImage = imread(fileName);
-    % myImage = histeq(myImage);
-
-    DisplayImage(myImage, h);
+    DisplayImage(imageInfo.GetImage(), h);
 
     set(gcf,'WindowButtonDownFcn',@display_ButtonDownFcn)
-    
+
+    h.ResultWriter = ResultWriter(imageInfo.Path, "Binarization", 0);
+
+
     % Choose default command line output for main
     h.output = hObject;
-
-    
-    
     
     % Update handles structure
     guidata(hObject, h);
@@ -98,6 +81,7 @@ function varargout = bin_ui_OutputFcn(~, ~, h)
 % --- Executes on button press in otsuFlag.
 function OtsuFlag_Callback(hObject, ~, h)
     flag = get(hObject, 'Value');
+
     if flag == true
         set(h.binThVal, 'enable', 'off')
     else
@@ -107,8 +91,6 @@ function OtsuFlag_Callback(hObject, ~, h)
 
 % --- Executes on button press in refreshBtn.
 function RefreshBtn_Callback(hObject, ~)
-    h = guidata(hObject);
-
     h = guidata(hObject);
 
     set(h.refreshBtn, 'BackgroundColor', [0.940000000000000	0.940000000000000	0.940000000000000]);
@@ -121,42 +103,43 @@ function RefreshBtn_Callback(hObject, ~)
 
     guidata(hObject, h);
     
-    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
+    fullPath = h.imageInfoContainer.GetSelectedImageInfo().Path;
     
-    radius = Get(h.radiusVal);
+    radius = GetValue(h.radiusVal);
     
-    if h.saveStepsFlag.Value
-        CreateDictionary(fullPath);
-    end
-
     if h.binarizationFlag.Value
-        resultImg = Binarization_Callback(h, fullPath, radius);
         h.method = "Binarization";
+        h.ResultWriter = ResultWriter(fullPath, h.method, h.saveStepsFlag.Value);
+        resultImage = Binarization_Callback(h, fullPath, radius);
 
     elseif h.cannyFlag.Value
-        resultImg = Canny_Callback(h, fullPath, radius);
         h.method = "Canny";
+        h.ResultWriter = ResultWriter(fullPath, h.method, h.saveStepsFlag.Value);
+        resultImage = Canny_Callback(h, fullPath, radius);
 
     elseif h.waterFlag.Value
-        resultImg = Watershed_Callback(h, fullPath, radius);
         h.method = "Watershed";
+        h.ResultWriter = ResultWriter(fullPath, h.method, h.saveStepsFlag.Value);
+        resultImage = Watershed_Callback(h, fullPath, radius);
     end
+
+
     guidata(hObject, h);
 
-    resultImg = DeleteObjectsBydiameter(resultImg, Get(h.minDiameterVal), Get(h.maxDiameterVal));
-    resultImg = DeleteObjectsByCircularity(resultImg, Get(h.circularityVal));
+    resultImage = DeleteObjectsBydiameter(resultImage, GetValue(h.minDiameterVal), GetValue(h.maxDiameterVal));
+    resultImage = DeleteObjectsByCircularity(resultImage, GetValue(h.circularityVal));
     
     
     if h.showOriginFlag.Value == false
-        DisplayImage(resultImg, h);
+        DisplayImage(resultImage, h);
     else
         myImage = imread(fullPath);
         DisplayImage(myImage, h);
     end
     
-    DisplayContours(resultImg, h);
+    DisplayContours(resultImage, h);
     
-    CalculateParams(resultImg, hObject);
+    CalculateParams(resultImage, hObject);
     h = guidata(hObject);
     set(h.detectedCountVal, 'string', h.Params.Number);
     DisplayData(hObject);
@@ -165,38 +148,35 @@ function RefreshBtn_Callback(hObject, ~)
 
 % --- Executes on button press in binarizationFlag.
 function BinarizationFlag_Callback(h)
-    flag_value = h.binarizationFlag.Value;
-    if flag_value == true
-        set(h.binPanel, 'Visible', 'on');
-        set(h.cannyPanel, 'Visible', 'off');
-        set(h.waterPanel, 'Visible', 'off');
-        set(h.cannyFlag, 'Value', false);
-        set(h.waterFlag, 'Value', false);
+    if h.binarizationFlag.Value == true
+        set(h.binPanel,         'Visible', 'on');
+        set(h.cannyPanel,       'Visible', 'off');
+        set(h.waterPanel,       'Visible', 'off');
+        set(h.cannyFlag,        'Value', false);
+        set(h.waterFlag,        'Value', false);
     end
 
 
 % --- Executes on button press in cannyFlag.
 function CannyFlag_Callback(h)
-    flag_value = h.cannyFlag.Value;
-    if flag_value == true
-        set(h.binPanel, 'Visible', 'off');
-        set(h.cannyPanel, 'Visible', 'on');
-        set(h.waterPanel, 'Visible', 'off');
+    if h.cannyFlag.Value == true
+        set(h.cannyPanel,       'Visible', 'on');
+        set(h.binPanel,         'Visible', 'off');
+        set(h.waterPanel,       'Visible', 'off');
         set(h.binarizationFlag, 'Value', false);
-        set(h.waterFlag, 'Value', false);
+        set(h.waterFlag,        'Value', false);
     end
 
 
 % --- Executes on button press in waterFlag.
 function WaterFlag_Callback(h)
-    flag_value = h.waterFlag.Value;
-    if flag_value == true
-        set(h.binPanel, 'Visible', 'off');
-        set(h.cannyPanel, 'Visible', 'off');
-        set(h.waterPanel, 'Visible', 'on');
-        set(h.cannyFlag, 'Value', false);
+    if h.waterFlag.Value == true
+        set(h.waterPanel,       'Visible', 'on');
+        set(h.binPanel,         'Visible', 'off');
+        set(h.cannyPanel,       'Visible', 'off');
+        set(h.cannyFlag,        'Value', false);
         set(h.binarizationFlag, 'Value', false);
-        set(h.cannyFlag, 'Value', false);
+        set(h.cannyFlag,        'Value', false);
     end
 
 
@@ -204,11 +184,11 @@ function WaterFlag_Callback(h)
 function ImagesList_Callback(hObject, ~)
     h = guidata(hObject);
     contents = cellstr(get(h.imagesList,'String'));
-    h.selectedImage = contents{get(h.imagesList, 'Value')};
+    h.imageInfoContainer.SetSelectedImage(contents{get(h.imagesList, 'Value')});
     
     cla;
-    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-    myImage = imread(fullPath);
+    
+    myImage = h.imageInfoContainer.GetSelectedImage();
     DisplayImage(myImage, h);
     guidata(hObject, h);
 
@@ -216,24 +196,11 @@ function ImagesList_Callback(hObject, ~)
 
 % --- CUSTOM FUNCTIONS ---
 
-% --- returns full path for file struct
-function path = GetFullPath(fileID, imageStructs)
-    parts = strsplit(fileID, ' ');
-    fileName = char(parts(length(parts)));
-
-    for ind=1:length(imageStructs)
-        if strcmp(fileName, imageStructs(ind).name)
-            path = strcat(imageStructs(ind).folder, '\', imageStructs(ind).name);
-            break;
-        end
-    end
-
-
 % --- Fits image to GUI axes
-function resultImg = FitToAxes(image, h)
+function resultImage = FitToAxes(image, h)
     set(h.display ,'Units','pixels');
     resizePos = get(h.display ,'Position');
-    resultImg = imresize(image, [resizePos(3) resizePos(3)]);
+    resultImage = imresize(image, [resizePos(3) resizePos(3)]);
 
 
 % --- Disaplays image in axes.
@@ -245,76 +212,98 @@ function DisplayImage(myImage, h)
 
 
 % --- Calls Binarization with correct args
-function resultImg = Binarization_Callback(h, path, radius)
+function resultImage = Binarization_Callback(h, path, radius)
     if h.otsuFlag.Value == false
-        [s, binThresh] = TryGet(h.binThVal,  @(binTh) 0 < binTh && binTh < 1, "Binarization threshold should be between 0 and 1: 0 < binThresh < 1");
-        if s == false
+        [success, binThresh] = TryGet(h.binThVal, @(binTh) 0 < binTh && binTh < 1, "Binarization threshold should be between 0 and 1: 0 < binThresh < 1");
+        
+        if success == false
             return;        
         end
-        [resultImg, otsu] = Binarization(path, h.saveStepsFlag.Value, radius, binThresh);
+
+        image = imread(path);
+
+        opening_img = Opening(h.ResultWriter, image, radius);
+        [resultImage, otsu] = Binarization(h.ResultWriter, opening_img, path, radius, binThresh);
     else
-        [resultImg, otsu] = Binarization(path, h.saveStepsFlag.Value, radius);
+
+        image = imread(path);
+
+        opening_img = Opening(h.ResultWriter, image, radius);
+        [resultImage, otsu] = Binarization(h.ResultWriter, opening_img, path);
     end    
 
     set(h.binThVal, 'String', num2str(otsu));
 
 
 % --- Calls Canny with correct args
-function resultImg = Canny_Callback(h, path, radius)
-    [s1, low]   = TryGet(h.lowThVal,  @(low) 0 < low && low < 1, "Incorrect low value, should be: 0 < low < high < 1");
-    [s2, high]  = TryGet(h.highThVal, @(high) 0 < high && low < high && high < 1, "Incorrect high value, should be: 0 < low < high < 1");
-    [s3, sigma] = TryGet(h.sigmaVal, @(sigma) sigma > 0, "Sigma should be bigger than zero: sigma > 0");
+function resultImage = Canny_Callback(h, path, radius)
+    [success1, low]   = TryGet(h.lowThVal,  @(low) 0 < low && low < 1, "Incorrect low value, should be: 0 < low < high < 1");
+    [success2, high]  = TryGet(h.highThVal, @(high) 0 < high && low < high && high < 1, "Incorrect high value, should be: 0 < low < high < 1");
+    [success3, sigma] = TryGet(h.sigmaVal, @(sigma) sigma > 0, "Sigma should be bigger than zero: sigma > 0");
 
-    if s1 && s2 && s3
-        resultImg = Canny(path, h.saveStepsFlag.Value, radius, [low, high], sigma);
+    if success1 && success2 && success3
+
+        image = imread(path);
+        % open operation
+        opening_img = Opening(h.ResultWriter, image, radius);
+        resultImage = Canny(h.ResultWriter, opening_img, path, [low, high], sigma);
     else
         return;
     end
 
 
 % --- Calls Watershed with correct args
-function resultImg = Watershed_Callback(h, path, radius)
-    [s1, sharpRadius]     = TryGet(h.sharpRadiusVal,     @(radius) radius >= 0, "Sharpen Radius should be bigger or equal to zero: radius >= 0");
-    [s2, low]             = TryGet(h.waterLowThVal,      @(low) 0 < low && low < 1, "Incorrect low value, should be: 0 < low < high < 1");
-    [s3, high]            = TryGet(h.waterHighThVal,     @(high) 0 < high && low < high && high < 1, "Incorrect high value, should be: 0 < low < high < 1");
-    [s4, sigma]           = TryGet(h.waterSigmaVal,      @(sigma) sigma > 0, "Sigma should be bigger than zero: sigma > 0");
-    [s5, gaussSigma]      = TryGet(h.gaussSigmaVal,      @(gSigma) gSigma > 0, "Gaussian sigma should be bigger than zero: gSigma > 0");
-    [s6, gaussFilter]     = TryGet(h.filterVal,          @(gFilter) mod(gFilter, 2) == 1, "Gaussian filter should be odd value");
+function resultImage = Watershed_Callback(h, path, radius)
+    [success1, sharpRadius]     = TryGet(h.sharpRadiusVal,     @(radius) radius >= 0, "Sharpen Radius should be bigger or equal to zero: radius >= 0");
+    [success2, low]             = TryGet(h.waterLowThVal,      @(low) 0 < low && low < 1, "Incorrect low value, should be: 0 < low < high < 1");
+    [success3, high]            = TryGet(h.waterHighThVal,     @(high) 0 < high && low < high && high < 1, "Incorrect high value, should be: 0 < low < high < 1");
+    [success4, sigma]           = TryGet(h.waterSigmaVal,      @(sigma) sigma > 0, "Sigma should be bigger than zero: sigma > 0");
+    [success5, gaussSigma]      = TryGet(h.gaussSigmaVal,      @(gSigma) gSigma > 0, "Gaussian sigma should be bigger than zero: gSigma > 0");
+    [success6, gaussFilter]     = TryGet(h.filterVal,          @(gFilter) mod(gFilter, 2) == 1, "Gaussian filter should be odd value");
     
     if h.sharpenRadiusFlag.Value == false
         sharpRadius = 0;
     end
     
-    if (s1 && s2 && s3 && s4 && s5 && s6) == false
+    if (success1 && success2 && success3 && success4 && success5 && success6) == false
         return;
     end
     
     if h.otsuWaterFlag.Value == false
-        [s7, binThresh] = TryGet(h.binWaterThVal, @(binTh) 0 < binTh && binTh < 1, "Binarization threshold should be between 0 and 1: 0 < binThresh < 1");
-        if s7 == false
+        [success7, binThresh] = TryGet(h.binWaterThVal, @(binTh) 0 < binTh && binTh < 1, "Binarization threshold should be between 0 and 1: 0 < binThresh < 1");
+        if success7 == false
             return;
         end
-        [resultImg, otsu] = Watershed(path, h.saveStepsFlag.Value, radius, sharpRadius, [low, high], sigma, gaussSigma, gaussFilter, binThresh);
+
+        image = imread(path);
+
+        opening_img = Opening(h.ResultWriter, image, radius);
+        [resultImage, otsu] = Watershed(h.ResultWriter, opening_img, path, sharpRadius, [low, high], sigma, gaussSigma, gaussFilter, binThresh);
     else
-        [resultImg, otsu] = Watershed(path, h.saveStepsFlag.Value, radius, sharpRadius, [low, high], sigma, gaussSigma, gaussFilter);
+
+        image = imread(path);
+
+        opening_img = Opening(h.ResultWriter, image, radius);
+        [resultImage, otsu] = Watershed(h.ResultWriter, opening_img, path, sharpRadius, [low, high], sigma, gaussSigma, gaussFilter);
     end
 
     set(h.binWaterThVal, 'String', num2str(otsu));
 
 % --- Returns double value from handle
-function value = Get(handle)
+function value = GetValue(handle)
     value = str2double(handle.String);
 
 
 % --- Returns value with validation
 function [success, value] = TryGet(handle, predicate, errMsg)
-    value = Get(handle);
-    set(handle,'Backgroundcolor','w');
+    value = GetValue(handle);
+    set(handle, 'Backgroundcolor', 'w');
+
     if predicate(value)
         success = true;
     else
         success = false;
-        set(handle,'Backgroundcolor','r');
+        set(handle, 'Backgroundcolor', 'r');
         uiwait(msgbox(errMsg));
     end
 
@@ -324,29 +313,27 @@ function DisplayContours(image, h)
     hold on;
 
     if h.displayContours == true
-        displayImage = image;
-        [B, ~] = bwboundaries(displayImage, 'noholes');
+        [B, ~] = bwboundaries(image, 'noholes');
         
-        set(h.display ,'Units','pixels');
+        set(h.display, 'Units', 'pixels');
         resizePos = get(h.display ,'Position');
         scale = resizePos(3) / 1024;
 
         for k = 1:length(B)
             boundary = B{k}.*scale;
-            plot(h.display, boundary(:,2),boundary(:,1),'r','LineWidth',2)
+            plot(h.display, boundary(:,2), boundary(:,1), 'r', 'LineWidth', 2)
         end
 
-        for i = 1:length(h.WellDetectedGrains)
-            boundary = B{h.WellDetectedGrains(i)}.*scale;
-            plot(h.display, boundary(:,2),boundary(:,1),'g','LineWidth',2)
+        for i = h.WellDetectedGrains
+            boundary = B{i}.*scale;
+            plot(h.display, boundary(:,2), boundary(:,1),'g', 'LineWidth', 2)
         end
 
-        for j = 1:length(h.SelectedGrain)
-            boundary = B{h.SelectedGrain(j)}.*scale;
-            plot(h.display, boundary(:,2),boundary(:,1),'b','LineWidth',2)
+        for j = h.SelectedGrain
+            boundary = B{j}.*scale;
+            plot(h.display, boundary(:,2), boundary(:,1), 'b', 'LineWidth', 2)
         end
     end
-
 
 
 % --- calculates contours/grains parameters from image
@@ -358,20 +345,30 @@ function CalculateParams(img,  hObject)
 
     % diameters
     diameters = [stats.EquivDiameter];
-    diametersTable = [median(diameters) mean(diameters) std(diameters)];
+    diametersTable = [median(diameters) ...
+                      mean(diameters) ...
+                      std(diameters)];
     
     % short axis
-    shortAxisTable = [median([stats.MinorAxisLength]) mean([stats.MinorAxisLength]) std([stats.MinorAxisLength])];
+    shortAxisTable = [median([stats.MinorAxisLength]) ...
+                      mean([stats.MinorAxisLength]) ...
+                      std([stats.MinorAxisLength])];
     
     % long axis
-    longAxisTable = [median([stats.MajorAxisLength]) mean([stats.MajorAxisLength]) std([stats.MajorAxisLength])];
+    longAxisTable = [median([stats.MajorAxisLength]) ...
+                     mean([stats.MajorAxisLength]) ...
+                     std([stats.MajorAxisLength])];
     
     % Circularity   
-    circularityTable = [median([stats.Circularity]) mean([stats.Circularity]) std([stats.Circularity])];
+    circularityTable = [median([stats.Circularity]) ...
+                        mean([stats.Circularity]) ...
+                        std([stats.Circularity])];
     
     % aspect ratio
     ratios = [stats.MinorAxisLength]./[stats.MajorAxisLength];
-    ratioTable = [median(ratios) mean(ratios) std(ratios)];
+    ratioTable = [median(ratios) ...
+                  mean(ratios) ...
+                  std(ratios)];
     
     h.Params.DiametersList = diameters;
     h.Params.Perimeters = [stats.Perimeter];
@@ -388,10 +385,9 @@ function CalculateParams(img,  hObject)
     h.Params.Ratio = ratioTable;
 
     % -- distribution
-    pd = makedist('Normal');
     x = {'<0.5', '>0.5', '>0.71', '>1.0', '>1.4', '>2.0', '>2.8', '4.0'};
 
-    y = CreateBarsValues(Pixels2MM(diameters));
+    y = CreateBarsValues(Converter.PixelsToMilimeters(diameters));
     h.Params.Granulometry = [];
     h.Params.Granulometry = y;
     cla(h.granulometric);
@@ -447,37 +443,33 @@ function DisplayData(hObject)
     h = guidata(hObject);
     set(h.grainsNumVal, 'String', h.Params.Number);
 
-    infoPixels = [h.Params.Diameter; h.Params.ShortAxis; h.Params.LongAxis; h.Params.Circularity; h.Params.Ratio];
+    infoPixels = [h.Params.Diameter; 
+                  h.Params.ShortAxis; 
+                  h.Params.LongAxis; 
+                  h.Params.Circularity; 
+                  h.Params.Ratio];
+
     set(h.tablePixels, 'Data',  infoPixels);
 
-    infoMetric = [Pixels2MM(h.Params.Diameter); Pixels2MM(h.Params.ShortAxis); Pixels2MM(h.Params.LongAxis); h.Params.Circularity; h.Params.Ratio];
+    infoMetric = [Converter.PixelsToMilimeters(h.Params.Diameter); 
+                  Converter.PixelsToMilimeters(h.Params.ShortAxis); 
+                  Converter.PixelsToMilimeters(h.Params.LongAxis); 
+                  h.Params.Circularity; h.Params.Ratio];
+
     set(h.tableMetrics, 'Data',  infoMetric);
-
-
-% --- converts Pixels to MMs, value can be scalar or matrix
-function convertedVaue = Pixels2MM(value)
-    scale = 0.031;
-    convertedVaue = value.* scale;
-
-
-% --- converts MMs to Pixels, value can be scalar or matrix
-function convertedVaue = MMs2Pixels(value)
-    scale = 0.031;
-    convertedVaue = value./ scale;
 
 
 % --- writes grains data to file
 function WriteDataToFile(hObject, dataTypes)
     h = guidata(hObject);
 
-    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-    splited = split(Create_file_name(fullPath, "log", h.method), '.');
-    fileName = splited(1) + ".txt";
+    resultDirectory = h.ResultWriter.GetResultDirectory();
+    fileName = Path.Combine(resultDirectory, 'log.txt');
     file = fopen(fileName, 'wt');
 
-
-    splited = split(h.selectedImage, ' ');
+    splited = split(h.ImageInfoContainer.SelectedImage, ' ');
     imageName = splited(length(splited));
+
     fprintf(file, 'Image ID: %s\n', string(imageName)); 
 
     fprintf(file, 'Method: ');
@@ -485,35 +477,36 @@ function WriteDataToFile(hObject, dataTypes)
         fprintf(file, 'Binarization\n\n');
         fprintf(file, '----------------\n');
         fprintf(file, 'Method parameters:\n');
-        fprintf(file, 'Opening radius: %g\n', Get(h.radiusVal));
-        fprintf(file, 'Binarization threshold: %g\n', Get(h.binThVal));
+        fprintf(file, 'Opening radius: %g\n', GetValue(h.radiusVal));
+        fprintf(file, 'Binarization threshold: %g\n', GetValue(h.binThVal));
                         
     elseif h.cannyFlag.Value
         fprintf(file, 'Canny edge detection\n');
         fprintf(file, '----------------\n');
         fprintf(file, 'Method parameters:\n');
-        fprintf(file, 'Opening radius: %g\n', Get(h.radiusVal));
-        fprintf(file, 'Low threshold: %g\n', Get(h.lowThVal));
-        fprintf(file, 'High threshold: %g\n', Get(h.highThVal));
-        fprintf(file, 'Sigma: %g\n', Get(h.sigmaVal));
+        fprintf(file, 'Opening radius: %g\n', GetValue(h.radiusVal));
+        fprintf(file, 'Low threshold: %g\n', GetValue(h.lowThVal));
+        fprintf(file, 'High threshold: %g\n', GetValue(h.highThVal));
+        fprintf(file, 'Sigma: %g\n', GetValue(h.sigmaVal));
 
     else h.waterFlag.Value
         fprintf(file, 'Watershed\n');
         fprintf(file, '----------------\n');
         fprintf(file, 'Method parameters:\n');
-        fprintf(file, 'Opening radius: %g\n', Get(h.radiusVal));
-        sharpRadius = Get(h.sharpRadiusVal);
+        fprintf(file, 'Opening radius: %g\n', GetValue(h.radiusVal));
+        sharpRadius = GetValue(h.sharpRadiusVal);
+        
         if h.sharpenRadiusFlag.Value == false
             sharpRadius = 0;
         end
 
         fprintf(file, 'Sharpening radius: %g\n', sharpRadius);
-        fprintf(file, 'Low threshold: %g\n', Get(h.waterLowThVal));
-        fprintf(file, 'High threshold: %g\n', Get(h.waterHighThVal));
-        fprintf(file, 'Sigma: %g\n', Get(h.waterSigmaVal));
-        fprintf(file, 'Gaussian filtering sigma: %g\n', Get(h.gaussSigmaVal));
-        fprintf(file, 'Gaussian filtering size: %g\n', Get(h.filterVal));
-        fprintf(file, 'Binarization threshold: %g\n', Get(h.binWaterThVal));
+        fprintf(file, 'Low threshold: %g\n', GetValue(h.waterLowThVal));
+        fprintf(file, 'High threshold: %g\n', GetValue(h.waterHighThVal));
+        fprintf(file, 'Sigma: %g\n', GetValue(h.waterSigmaVal));
+        fprintf(file, 'Gaussian filtering sigma: %g\n', GetValue(h.gaussSigmaVal));
+        fprintf(file, 'Gaussian filtering size: %g\n', GetValue(h.filterVal));
+        fprintf(file, 'Binarization threshold: %g\n', GetValue(h.binWaterThVal));
         
     end
 
@@ -521,22 +514,27 @@ function WriteDataToFile(hObject, dataTypes)
 
     
     fprintf(file, 'Filtering:\n');
-    fprintf(file, 'Min diameter: %g\n', Get(h.minDiameterVal));
-    fprintf(file, 'Max diameter: %g\n', Get(h.maxDiameterVal));
-    fprintf(file, 'Min circularity: %g\n\n', Get(h.circularityVal));
+    fprintf(file, 'Min diameter: %g\n', GetValue(h.minDiameterVal));
+    fprintf(file, 'Max diameter: %g\n', GetValue(h.maxDiameterVal));
+    fprintf(file, 'Min circularity: %g\n\n', GetValue(h.circularityVal));
     
     fprintf(file, '\n----------------\n');
     fprintf(file, 'Num of manualy deleted grains: %g\n\n', h.GrainsDeletedManualy);
 
     fprintf(file, '\n----------------\n');
-    fprintf(file, 'Number of detected grains: %g\n', Get(h.detectedCountVal));
+    fprintf(file, 'Number of detected grains: %g\n', GetValue(h.detectedCountVal));
     fprintf(file, 'Number of grains after filtering: %g\n', h.Params.Number);
     fprintf(file, 'Number of well detected grains: %g\n', length(h.WellDetectedGrains));
 
     fprintf(file, '\n----------------\n');
     fprintf(file, 'In pixels:\n');
     fprintf(file, 'Median\nMean\nStandard devation\n\n');
-    dataMatrix = [h.Params.Diameter; h.Params.ShortAxis; h.Params.LongAxis; h.Params.Circularity; h.Params.Ratio];
+    dataMatrix = [h.Params.Diameter; 
+                  h.Params.ShortAxis; 
+                  h.Params.LongAxis; 
+                  h.Params.Circularity; 
+                  h.Params.Ratio];
+
     for i = 1 : size(dataMatrix, 1)
         data = dataMatrix(i,:);
         fprintf(file, '%s:\n', dataTypes(i));
@@ -549,7 +547,11 @@ function WriteDataToFile(hObject, dataTypes)
     fprintf(file, '----------------\n');
     fprintf(file, 'In MMs:\n');
     fprintf(file, 'Median\nMean\nStandard devation\n\n');
-    dataMatrix = [Pixels2MM(h.Params.Diameter); Pixels2MM(h.Params.ShortAxis); Pixels2MM(h.Params.LongAxis); h.Params.Circularity; h.Params.Ratio];
+    dataMatrix = [Converter.PixelsToMilimeters(h.Params.Diameter); 
+                  Converter.PixelsToMilimeters(h.Params.ShortAxis); 
+                  Converter.PixelsToMilimeters(h.Params.LongAxis); 
+                  h.Params.Circularity; h.Params.Ratio];
+
     for i = 1 : size(dataMatrix, 1)
         data = dataMatrix(i,:);
         fprintf(file, '%s:\n', dataTypes(i));
@@ -559,7 +561,6 @@ function WriteDataToFile(hObject, dataTypes)
         fprintf(file, '\n');
     end
 
-    x = {'<0.5', '>0.5', '>0.71', '>1.0', '>1.4', '>2.0', '>2.8', '4.0'};
 
     fprintf(file, '\n-----------------------------------------\n');
     fprintf(file, 'Granulometry data:\n');
@@ -580,9 +581,8 @@ function WriteDataToFile(hObject, dataTypes)
 function WriteGrainsToFile(hObject)
     h = guidata(hObject);
 
-    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-    splited = split(Create_file_name(fullPath, "data", h.method), '.');
-    fileName = splited(1) + ".xls";
+    resultDirectory = h.ResultWriter.GetResultDirectory();
+    fileName = Path.Combine(resultDirectory, 'data.xls');
     
     if isfile(fileName) 
         delete(fileName);
@@ -619,65 +619,38 @@ function ToPixels_Callback(hObject)
     guidata(hObject, h);
 
 
-function resultImg = DeleteObjectsBydiameter(image, minDiameter, maxDiameter)
-    resultImg = bwpropfilt(imbinarize(image), 'EquivDiameter', [MMs2Pixels(minDiameter) MMs2Pixels(maxDiameter)]);
+function resultImage = DeleteObjectsBydiameter(image, minDiameter, maxDiameter)
+    resultImage = bwpropfilt(imbinarize(image), 'EquivDiameter', [Converter.MilimetersToPixels(minDiameter) Converter.MilimetersToPixels(maxDiameter)]);
 
 
-function resultImg = DeleteObjectsByCircularity(image, minCircularity)
-    [B, L] = bwboundaries(image,'noholes');
-    stats = regionprops(L,'Area');
+function resultImage = DeleteObjectsByCircularity(image, minCircularity)
+    [~, L] = bwboundaries(image,'noholes');
+    stats = regionprops(L,'Circularity');
 
-    circularity = zeros(1, length(B));
-    for k = 1:length(B)
-        
-        % obtain (X,Y) boundary coordinates corresponding to label 'k'
-        boundary = B{k};
-        
-        % compute a simple estimate of the object's perimeter
-        delta_sq = diff(boundary).^2;    
-        perimeter = sum(sqrt(sum(delta_sq,2)));
-        
-        % obtain the area calculation corresponding to label 'k'
-        area = stats(k).Area;
-        
-        % compute the roundness metric
-        circularity(k) = 4*pi*area/perimeter^2;
-    end
-
+    circularity = [stats.Circularity];
     for i = length(circularity):-1:1
         if circularity(i) < minCircularity
-            B(i) = [];
-            for x = 1:length(L)
-                for y = 1:length(L)
-                    if L(x ,y) == i
-                        L(x,y) = 0;
-                    end
-                end
-            end
+            L(L==i) = 0;
         end
     end
 
-    resultImg = L;
+    resultImage = L;
 
 
-function resultImg = DeleteObjectByIndex(image, indexes)
-    [~, L] = bwboundaries(image,'noholes');
-    for x = 1:length(L)
-        for y = 1:length(L)
-            for i = 1:length(indexes)
-                if L(x ,y) == indexes(i)
-                    L(x,y) = 0;
-                end
-            end
-        end
+function resultImage = DeleteObjectByIndex(image, indexes)
+    [~, L] = bwboundaries(image, 'noholes');
+
+    for i = indexes
+        L(L==i) = 0;
     end
 
-    resultImg = L;
+    resultImage = L;
 
 
 % --- Executes on button press in sharpenRadiusFlag.
 function SharpenRadiusFlag_Callback(hObject)
     h = guidata(hObject);
+
     if h.sharpenRadiusFlag.Value == false
         set(h.sharpenRadiusFlag, 'value', false);
         set(h.sharpRadiusVal, 'enable', 'off');
@@ -725,10 +698,9 @@ set(hObject, 'Data', cell(1));
 function deleteGrain_Callback(hObject, ~, ~)
     h = guidata(hObject);
     
-    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
     h.WellDetectedGrains = [];
     
-    myImage = imread(fullPath);
+    myImage = h.imageInfoContainer.GetSelectedImage();
     DisplayImage(myImage, h);
     
     h.resultImage = DeleteObjectByIndex(h.resultImage, h.SelectedGrain);
@@ -749,30 +721,31 @@ function deleteGrain_Callback(hObject, ~, ~)
 
 % --- Executes on button press in saveButton.
 function saveButton_Callback(hObject, eventdata, h)
-    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-    CreateDictionary(fullPath);
-
-    imwrite(h.resultImage, Create_file_name(fullPath, "grains", h.method));
+    h.ResultWriter.SaveImage(h.resultImage, "grains.png");
     
     F = getframe(h.display);
     Image = frame2im(F);
-    imwrite(Image, Create_file_name(fullPath, "result_display", h.method));
+    
+    h.ResultWriter.SaveImage(Image, "result_display.png");
 
     newfig1 = figure('Visible','off'); 
     copyobj(h.granulometric, newfig1);
-    saveas(newfig1, Create_file_name(fullPath, "granulometry", h.method),'jpg');
+
+    resultDirectory = h.ResultWriter.GetResultDirectory();
+    saveas(newfig1, Path.Combine(resultDirectory, 'granulometry.png'),'png');
 
     WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
     WriteGrainsToFile(hObject);
 
 
 function ShowOrigin_Callback(hObject, eventdata, h)
+
     resultImageExist = isfield(h, 'resultImage') && length(ishandle(h.resultImage)) > 0;
+
     if h.showOriginFlag.Value == false && resultImageExist
         DisplayImage(h.resultImage, h);
     else
-        fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-        myImage = imread(fullPath);
+        myImage = h.imageInfoContainer.GetSelectedImage();
         DisplayImage(myImage, h);
     end
 
@@ -789,38 +762,40 @@ function display_ButtonDownFcn(hObject, eventdata)
     resizePos = get(h.display ,'Position');
     scale = 1024 / resizePos(3);
 
-    p = get(h.display, 'currentpoint');
-    p = p.*scale;
+    Mouse = get(h.display, 'currentpoint');
+    Mouse = Mouse.*scale;
 
     
     resultImageExist = isfield(h, 'resultImage') && ~isempty(ishandle(h.resultImage));
+
     if resultImageExist
         [B, ~] = bwboundaries(h.resultImage, 'noholes');
+
         for i = 1 : length(B)
-            if inpolygon(p(1, 1), p(1, 2), B{i}(:,2), B{i}(:,1))
-                exist = false;
-                for j = 1 : length(h.SelectedGrain)
-                    if h.SelectedGrain(j) == i
-                        scale2 = resizePos(3) / 1024;
-                        boundary = B{i}.*scale2;
-                        plot(h.display, boundary(:,2),boundary(:,1),'r','LineWidth',2)
-                        h.SelectedGrain(j) = [];
-                        exist = true;
-                        break;
-                    end
+            boundary = B{i};
+
+            if inpolygon(Mouse(1, 1), Mouse(1, 2), boundary(:,2), boundary(:,1))
+                if any(h.SelectedGrain(:) == i)
+
+                    scale2 = resizePos(3) / 1024;
+                    boundary = boundary.*scale2;
+
+                    plot(h.display, boundary(:,2), boundary(:,1), 'r', 'LineWidth', 2)
+                    h.SelectedGrain(h.SelectedGrain == i) = [];
+                    break;
                 end
                 
-                if ~exist
-                    hold on;
-                    scale2 = resizePos(3) / 1024;
-                    h.SelectedGrain(length(h.SelectedGrain) + 1) = i;
-                    boundary = B{i}.*scale2;
-                    plot(h.display, boundary(:,2),boundary(:,1),'b','LineWidth',2)
-                end
+                hold on;
+
+                scale2 = resizePos(3) / 1024;
+                boundary = boundary.*scale2;
+
+                h.SelectedGrain(length(h.SelectedGrain) + 1) = i;
+                plot(h.display, boundary(:,2), boundary(:,1), 'b', 'LineWidth', 2)
             
-                diameter = Pixels2MM(h.Params.DiametersList(i));
-                shortAxis = Pixels2MM(h.Params.ShortAxisList(i));
-                longAxis = Pixels2MM(h.Params.LongAxisList(i));
+                diameter = Converter.PixelsToMilimeters(h.Params.DiametersList(i));
+                shortAxis = Converter.PixelsToMilimeters(h.Params.ShortAxisList(i));
+                longAxis = Converter.PixelsToMilimeters(h.Params.LongAxisList(i));
                 circularity = h.Params.CircularityList(i);
                 ratio = h.Params.RatioList(i);
                 data = [diameter, shortAxis, longAxis, circularity, ratio];
@@ -838,10 +813,6 @@ function display_ButtonDownFcn(hObject, eventdata)
 function wellDetectedButton_Callback(hObject)
     h = guidata(hObject);
     
-    fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-    
-    myImage = imread(fullPath);
-
     h.WellDetectedGrains = cat(2, h.WellDetectedGrains, h.SelectedGrain);
     h.SelectedGrain = [];
     
@@ -851,8 +822,8 @@ function wellDetectedButton_Callback(hObject)
     resizePos = get(h.display ,'Position');
     scale = resizePos(3) / 1024;
 
-    for i = 1:length(h.WellDetectedGrains)
-        boundary = B{h.WellDetectedGrains(i)}.*scale;
+    for i = h.WellDetectedGrains
+        boundary = B{i}.*scale;
         plot(h.display, boundary(:,2),boundary(:,1),'g','LineWidth',2)
     end
     
@@ -875,8 +846,7 @@ function displayContoursCheckbox_Callback(hObject, eventdata, h)
 
     if toggleContours == 0
         cla(h.display);
-        fullPath = GetFullPath(h.selectedImage, h.imageStructs);
-        myImage = imread(fullPath);
+        myImage = h.imageInfoContainer.GetSelectedImage();
         DisplayImage(myImage, h);
         h.displayContours = false;
     else
@@ -884,4 +854,5 @@ function displayContoursCheckbox_Callback(hObject, eventdata, h)
         guidata(hObject, h);
         DisplayContours(h.resultImage, h);
     end
+
     guidata(hObject, h);

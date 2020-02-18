@@ -1,54 +1,34 @@
-function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpen_radius, thresh, sigma, gaussian_sigma, guassian_filter, bin_level)
-    I = imread(file_name);
-
-    % open operation
-    disk_kernel = Disk_kernel(open_radius);
-    opening_img = imopen(I, disk_kernel);
-
-    if log == true
-        imwrite(opening_img, Create_file_name(file_name, "open", "Watershed\Steps"));
-    end
-
+function [resultImage, otsuThreshold] = Watershed(resultWriter, sourceImage, fileName, sharpenRadius, thresh, sigma, gaussianSigma, guassianFilter, otsuThreshold)
     % change to grayscale for JPG
-    if Check_If_JPG(file_name)
-        opening_img = rgb2gray(opening_img);
+    if Path.IsJpgFile(fileName)
+        sourceImage = rgb2gray(sourceImage);
     end
         
     % sharpening image
-    if sharpen_radius ~= 0
-        sharpened_img = imsharpen(opening_img, "Radius", sharpen_radius);
+    if sharpenRadius ~= 0
+        sharpenedImage = imsharpen(sourceImage, "Radius", sharpenRadius);
     else
-        sharpened_img = opening_img;
+        sharpenedImage = sourceImage;
     end
 
     % FIRST PARALLEL 
     % START
 
         % canny detection
-        edge_img = edge(sharpened_img,'canny', thresh, sigma);
-        if isa(opening_img, 'uint8')
-            edge_img = uint8(255 * edge_img);
-        else
-            edge_img = uint16(65535 * edge_img);
-        end
+        contoursImage = edge(sharpenedImage,'canny', thresh, sigma);
+        contoursImage = Converter.BinaryToValues(contoursImage, sourceImage);
 
-        if log == true
-            imwrite(edge_img, Create_file_name(file_name, "edge", "Watershed\Steps"));
-        end
+        resultWriter.SaveStepImage(contoursImage, "edge.png");
 
         % add edge to sharpened img
-        added_img = sharpened_img + edge_img;
-        if log == true
-            imwrite(added_img, Create_file_name(file_name, "add", "Watershed\Steps"));
-        end
+        addedContoursImage = sharpenedImage + contoursImage;
+
+        resultWriter.SaveStepImage(addedContoursImage, "add.png");
 
         % gradient filtering
-        [gmag, ~] = imgradient(added_img);
-        gmag = rescale(gmag);
-
-        if log == true
-            imwrite(gmag, Create_file_name(file_name, "gradient", "Watershed\Steps"));
-        end
+        [gradientImage, ~] = imgradient(addedContoursImage);
+        gradientImage = rescale(gradientImage);
+        resultWriter.SaveStepImage(gradientImage, "gradient.png");
 
     % FIRST PARALLEL 
     % END
@@ -58,75 +38,46 @@ function [result_img, bin_level] = Watershed(file_name, log, open_radius, sharpe
 
         % binarization OTSU threshold
         if nargin < 9
-            bin_level = graythresh(sharpened_img);
+            otsuThreshold = graythresh(sharpenedImage);
         end
-        binary_img = imbinarize(sharpened_img, bin_level);
-        if log == true
-            imwrite(binary_img, Create_file_name(file_name, "bin", "Watershed\Steps"));
-        end
+        binaryImage = imbinarize(sharpenedImage, otsuThreshold);
+        resultWriter.SaveStepImage(binaryImage, "bin.png");
 
         % filling holes
-        if isa(opening_img, 'uint8')
-            binary_img = uint8(255 * binary_img);
-        else
-            binary_img = uint16(65535 * binary_img);
-        end
-
-        filled = imfill(binary_img);
-        if log == true
-            imwrite(filled, Create_file_name(file_name, "fill", "Watershed\Steps"));
-        end
+        binaryImage = Converter.BinaryToValues(binaryImage, sourceImage);
+        filledHolesImage = imfill(binaryImage);
+        resultWriter.SaveStepImage(filledHolesImage, "fill.png");
 
         % distance transform
-        distance_img = rescale(bwdist(~filled));
+        distanceTransformImage = rescale(bwdist(~filledHolesImage));
 
         % gaussian filtering
-        gaussian_img = imgaussfilt(distance_img, gaussian_sigma, 'FilterSize', guassian_filter);
-        if log == true
-            imwrite(gaussian_img, Create_file_name(file_name, "gaussian", "Watershed\Steps"));
-        end
+        gaussianFilteringImage = imgaussfilt(distanceTransformImage, gaussianSigma, 'FilterSize', guassianFilter);
+        resultWriter.SaveStepImage(gaussianFilteringImage, "gaussian.png");
 
         % Finding markers(MS)/ extended maxima detection
-        img = imextendedmax(gaussian_img, 0.001);
-        if log == true
-            imwrite(img, Create_file_name(file_name, "MAX", "Watershed\Steps"));
-        end
+        extendedMaximaImage = imextendedmax(gaussianFilteringImage, 0.001);
+        resultWriter.SaveStepImage(extendedMaximaImage, "MAX.png");
 
     % SECOND PARALLEL 
     % END
 
     % adding two together
-    combined_img = imimposemin(gmag, img);
-    
-    if log == true
-        imwrite(combined_img, Create_file_name(file_name, "combined", "Watershed\Steps"));
-    end
+    combinedImage = imimposemin(gradientImage, extendedMaximaImage);
+    resultWriter.SaveStepImage(combinedImage, "combined.png");
     
     % watershed
-    water_img = watershed(combined_img);
-    if isa(opening_img, 'uint8')
-        water_img = uint8(255 * water_img);
-    else
-        water_img = uint16(65535 * water_img);
-    end
+    watershedImage = watershed(combinedImage);
+    watershedImage = Converter.BinaryToValues(watershedImage, sourceImage);
 
     % binarization OTSU threshold
-    level = graythresh(water_img);
-    binary_img = imbinarize(water_img, level);
+    otsuThreshold = graythresh(watershedImage);
+    binaryImage = imbinarize(watershedImage, otsuThreshold);
 
     % deleting border objects
-    result_img = imclearborder(binary_img);
+    resultImage = imclearborder(binaryImage);
+    resultImage = Converter.BinaryToValues(resultImage, sourceImage);
 
-    if isa(opening_img, 'uint8')
-        result_img = uint8(255 * result_img);
-    else
-        result_img = uint16(65535 * result_img);
-    end
-    result_img = imfill(result_img);
-
-    if log == true
-        imwrite(result_img, Create_file_name(file_name, "result", "Watershed\Steps"));
-    end
-
+    resultImage = imfill(resultImage);
+    resultWriter.SaveStepImage(resultImage, "result.png");
 end
-

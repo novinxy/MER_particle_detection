@@ -1,3 +1,10 @@
+function [resultImage] = Opening(resultWriter, sourceImage, radius)
+    diskKernel = Disk_kernel(radius);
+    resultImage = imopen(sourceImage, diskKernel);
+    
+    resultWriter.SaveStepImage(resultImage, "open.png");
+end
+
 function [kernel] = Disk_kernel(radius)
     diameter = 2 * radius + 1;
 
@@ -20,3 +27,5 @@ end
 function distance = CalculateDistance(x, y)
     distance = sqrt(x * x + y * y);
 end
+
+
