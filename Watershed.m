@@ -1,9 +1,5 @@
-function [resultImage, otsuThreshold] = Watershed(resultWriter, sourceImage, fileName, sharpenRadius, thresh, sigma, gaussianSigma, guassianFilter, otsuThreshold)
-    % change to grayscale for JPG
-    if Path.IsJpgFile(fileName)
-        sourceImage = rgb2gray(sourceImage);
-    end
-        
+function [resultImage, otsuThreshold] = Watershed(resultWriter, sourceImage, sharpenRadius, thresh, sigma, gaussianSigma, guassianFilter, otsuThreshold)
+    
     % sharpening image
     if sharpenRadius ~= 0
         sharpenedImage = imsharpen(sourceImage, "Radius", sharpenRadius);

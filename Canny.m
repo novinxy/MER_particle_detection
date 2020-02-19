@@ -1,9 +1,4 @@
-function resultImage = Canny(resultWriter, sourceImage, fileName, threshold, sigma)
-    % change to grayscale for JPG
-    if Path.IsJpgFile(fileName)
-        sourceImage = rgb2gray(sourceImage);
-    end
-        
+function resultImage = Canny(resultWriter, sourceImage, threshold, sigma)
     % canny detection
     contoursImage = edge(sourceImage,'canny', threshold, sigma);
     

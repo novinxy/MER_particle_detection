@@ -1,9 +1,4 @@
-function [resultImage, thresholdLevel] = Binarization(resultWriter, sourceImage, fileName, thresholdLevel)
-   
-    % change to grayscale for JPG
-    if Path.IsJpgFile(fileName)
-        sourceImage = rgb2gray(sourceImage);
-    end
+function [resultImage, thresholdLevel] = Binarization(resultWriter, sourceImage, thresholdLevel)
 
     % binarization OTSU threshold
     if nargin < 4

@@ -59,9 +59,9 @@ function bin_ui_OpeningFcn(hObject, ~, h, varargin)
 
     imageInfo = h.imageInfoContainer.GetSelectedImageInfo();
     
-    DisplayImage(imageInfo.GetImage(), h);
+    DisplayImage(h, imageInfo.GetImage());
 
-    set(gcf,'WindowButtonDownFcn',@display_ButtonDownFcn)
+    set(gcf,'WindowButtonDownFcn', @display_ButtonDownFcn)
 
     h.ResultWriter = ResultWriter(imageInfo.Path, "Binarization", 0);
 
@@ -89,6 +89,7 @@ function OtsuFlag_Callback(hObject, ~, h)
     end
 
 
+
 % --- Executes on button press in refreshBtn.
 function RefreshBtn_Callback(hObject, ~)
     h = guidata(hObject);
@@ -103,38 +104,35 @@ function RefreshBtn_Callback(hObject, ~)
 
     guidata(hObject, h);
     
-    fullPath = h.imageInfoContainer.GetSelectedImageInfo().Path;
-    
-    radius = GetValue(h.radiusVal);
-    
+    selectedImageInfo = h.imageInfoContainer.GetSelectedImageInfo();
+    selectedImage = selectedImageInfo.GetImageGray();
+
     if h.binarizationFlag.Value
         h.method = "Binarization";
-        h.ResultWriter = ResultWriter(fullPath, h.method, h.saveStepsFlag.Value);
-        resultImage = Binarization_Callback(h, fullPath, radius);
+        h.ResultWriter = ResultWriter(selectedImageInfo.Path, h.method, h.saveStepsFlag.Value);
+        resultImage = Binarization_Callback(h, selectedImage);
 
     elseif h.cannyFlag.Value
         h.method = "Canny";
-        h.ResultWriter = ResultWriter(fullPath, h.method, h.saveStepsFlag.Value);
-        resultImage = Canny_Callback(h, fullPath, radius);
+        h.ResultWriter = ResultWriter(selectedImageInfo.Path, h.method, h.saveStepsFlag.Value);
+        resultImage = Canny_Callback(h, selectedImage);
 
     elseif h.waterFlag.Value
         h.method = "Watershed";
-        h.ResultWriter = ResultWriter(fullPath, h.method, h.saveStepsFlag.Value);
-        resultImage = Watershed_Callback(h, fullPath, radius);
+        h.ResultWriter = ResultWriter(selectedImageInfo.Path, h.method, h.saveStepsFlag.Value);
+        resultImage = Watershed_Callback(h, selectedImage);
     end
 
 
     guidata(hObject, h);
 
-    resultImage = DeleteObjectsBydiameter(resultImage, GetValue(h.minDiameterVal), GetValue(h.maxDiameterVal));
-    resultImage = DeleteObjectsByCircularity(resultImage, GetValue(h.circularityVal));
-    
+    resultImage = DeleteObjectsByDiameter(resultImage, Utils.GetValue(h.minDiameterVal), Utils.GetValue(h.maxDiameterVal));
+    resultImage = DeleteObjectsByCircularity(resultImage, Utils.GetValue(h.circularityVal));
     
     if h.showOriginFlag.Value == false
-        DisplayImage(resultImage, h);
+        DisplayImage(h, resultImage);
     else
-        myImage = imread(fullPath);
-        DisplayImage(myImage, h);
+        DisplayImage(h, selectedImageInfo.GetImage());
     end
     
     DisplayContours(resultImage, h);
@@ -188,8 +186,8 @@ function ImagesList_Callback(hObject, ~)
     
     cla;
     
-    myImage = h.imageInfoContainer.GetSelectedImage();
-    DisplayImage(myImage, h);
+    selectedImage = h.imageInfoContainer.GetSelectedImage();
+    DisplayImage(h, selectedImage);
     guidata(hObject, h);
 
 
@@ -197,22 +195,25 @@ function ImagesList_Callback(hObject, ~)
 % --- CUSTOM FUNCTIONS ---
 
 % --- Fits image to GUI axes
-function resultImage = FitToAxes(image, h)
+function resultImage = FitToAxes(h, image)
     set(h.display ,'Units','pixels');
     resizePos = get(h.display ,'Position');
     resultImage = imresize(image, [resizePos(3) resizePos(3)]);
 
 
 % --- Disaplays image in axes.
-function DisplayImage(myImage, h)
-    myImage = FitToAxes(myImage, h);
+function DisplayImage(h, image)
+    image = FitToAxes(h, image);
     axes(h.display);
-    imshow(myImage);
+    imshow(image);
     set(h.display ,'Units','normalized');
 
 
 % --- Calls Binarization with correct args
-function resultImage = Binarization_Callback(h, path, radius)
+function resultImage = Binarization_Callback(h, image)
+
+    radius = Utils.GetValue(h.radiusVal);
+    
     if h.otsuFlag.Value == false
         [success, binThresh] = TryGet(h.binThVal, @(binTh) 0 < binTh && binTh < 1, "Binarization threshold should be between 0 and 1: 0 < binThresh < 1");
         
@@ -220,40 +221,41 @@ function resultImage = Binarization_Callback(h, path, radius)
             return;        
         end
 
-        image = imread(path);
-
         opening_img = Opening(h.ResultWriter, image, radius);
-        [resultImage, otsu] = Binarization(h.ResultWriter, opening_img, path, radius, binThresh);
+        [resultImage, otsu] = Binarization(h.ResultWriter, opening_img, radius, binThresh);
     else
 
-        image = imread(path);
-
         opening_img = Opening(h.ResultWriter, image, radius);
-        [resultImage, otsu] = Binarization(h.ResultWriter, opening_img, path);
+        [resultImage, otsu] = Binarization(h.ResultWriter, opening_img);
     end    
 
     set(h.binThVal, 'String', num2str(otsu));
 
 
 % --- Calls Canny with correct args
-function resultImage = Canny_Callback(h, path, radius)
+function resultImage = Canny_Callback(h, image)
+
+    radius = Utils.GetValue(h.radiusVal);
+
     [success1, low]   = TryGet(h.lowThVal,  @(low) 0 < low && low < 1, "Incorrect low value, should be: 0 < low < high < 1");
     [success2, high]  = TryGet(h.highThVal, @(high) 0 < high && low < high && high < 1, "Incorrect high value, should be: 0 < low < high < 1");
     [success3, sigma] = TryGet(h.sigmaVal, @(sigma) sigma > 0, "Sigma should be bigger than zero: sigma > 0");
 
     if success1 && success2 && success3
 
-        image = imread(path);
         % open operation
         opening_img = Opening(h.ResultWriter, image, radius);
-        resultImage = Canny(h.ResultWriter, opening_img, path, [low, high], sigma);
+        resultImage = Canny(h.ResultWriter, opening_img, [low, high], sigma);
     else
         return;
     end
 
 
 % --- Calls Watershed with correct args
-function resultImage = Watershed_Callback(h, path, radius)
+function resultImage = Watershed_Callback(h, image)
+
+    radius = Utils.GetValue(h.radiusVal);
+
     [success1, sharpRadius]     = TryGet(h.sharpRadiusVal,     @(radius) radius >= 0, "Sharpen Radius should be bigger or equal to zero: radius >= 0");
     [success2, low]             = TryGet(h.waterLowThVal,      @(low) 0 < low && low < 1, "Incorrect low value, should be: 0 < low < high < 1");
     [success3, high]            = TryGet(h.waterHighThVal,     @(high) 0 < high && low < high && high < 1, "Incorrect high value, should be: 0 < low < high < 1");
@@ -275,28 +277,20 @@ function resultImage = Watershed_Callback(h, path, radius)
             return;
         end
 
-        image = imread(path);
-
         opening_img = Opening(h.ResultWriter, image, radius);
-        [resultImage, otsu] = Watershed(h.ResultWriter, opening_img, path, sharpRadius, [low, high], sigma, gaussSigma, gaussFilter, binThresh);
+        [resultImage, otsu] = Watershed(h.ResultWriter, opening_img, sharpRadius, [low, high], sigma, gaussSigma, gaussFilter, binThresh);
     else
 
-        image = imread(path);
-
         opening_img = Opening(h.ResultWriter, image, radius);
-        [resultImage, otsu] = Watershed(h.ResultWriter, opening_img, path, sharpRadius, [low, high], sigma, gaussSigma, gaussFilter);
+        [resultImage, otsu] = Watershed(h.ResultWriter, opening_img, sharpRadius, [low, high], sigma, gaussSigma, gaussFilter);
     end
 
     set(h.binWaterThVal, 'String', num2str(otsu));
 
-% --- Returns double value from handle
-function value = GetValue(handle)
-    value = str2double(handle.String);
-
 
 % --- Returns value with validation
 function [success, value] = TryGet(handle, predicate, errMsg)
-    value = GetValue(handle);
+    value = Utils.GetValue(handle);
     set(handle, 'Backgroundcolor', 'w');
 
     if predicate(value)
@@ -458,147 +452,6 @@ function DisplayData(hObject)
 
     set(h.tableMetrics, 'Data',  infoMetric);
 
-
-% --- writes grains data to file
-function WriteDataToFile(hObject, dataTypes)
-    h = guidata(hObject);
-
-    resultDirectory = h.ResultWriter.GetResultDirectory();
-    fileName = Path.Combine(resultDirectory, 'log.txt');
-    file = fopen(fileName, 'wt');
-
-    splited = split(h.ImageInfoContainer.SelectedImage, ' ');
-    imageName = splited(length(splited));
-
-    fprintf(file, 'Image ID: %s\n', string(imageName)); 
-
-    fprintf(file, 'Method: ');
-    if h.binarizationFlag.Value
-        fprintf(file, 'Binarization\n\n');
-        fprintf(file, '----------------\n');
-        fprintf(file, 'Method parameters:\n');
-        fprintf(file, 'Opening radius: %g\n', GetValue(h.radiusVal));
-        fprintf(file, 'Binarization threshold: %g\n', GetValue(h.binThVal));
-                        
-    elseif h.cannyFlag.Value
-        fprintf(file, 'Canny edge detection\n');
-        fprintf(file, '----------------\n');
-        fprintf(file, 'Method parameters:\n');
-        fprintf(file, 'Opening radius: %g\n', GetValue(h.radiusVal));
-        fprintf(file, 'Low threshold: %g\n', GetValue(h.lowThVal));
-        fprintf(file, 'High threshold: %g\n', GetValue(h.highThVal));
-        fprintf(file, 'Sigma: %g\n', GetValue(h.sigmaVal));
-
-    else h.waterFlag.Value
-        fprintf(file, 'Watershed\n');
-        fprintf(file, '----------------\n');
-        fprintf(file, 'Method parameters:\n');
-        fprintf(file, 'Opening radius: %g\n', GetValue(h.radiusVal));
-        sharpRadius = GetValue(h.sharpRadiusVal);
-        
-        if h.sharpenRadiusFlag.Value == false
-            sharpRadius = 0;
-        end
-
-        fprintf(file, 'Sharpening radius: %g\n', sharpRadius);
-        fprintf(file, 'Low threshold: %g\n', GetValue(h.waterLowThVal));
-        fprintf(file, 'High threshold: %g\n', GetValue(h.waterHighThVal));
-        fprintf(file, 'Sigma: %g\n', GetValue(h.waterSigmaVal));
-        fprintf(file, 'Gaussian filtering sigma: %g\n', GetValue(h.gaussSigmaVal));
-        fprintf(file, 'Gaussian filtering size: %g\n', GetValue(h.filterVal));
-        fprintf(file, 'Binarization threshold: %g\n', GetValue(h.binWaterThVal));
-        
-    end
-
-    fprintf(file, '\n----------------\n');
-
-    
-    fprintf(file, 'Filtering:\n');
-    fprintf(file, 'Min diameter: %g\n', GetValue(h.minDiameterVal));
-    fprintf(file, 'Max diameter: %g\n', GetValue(h.maxDiameterVal));
-    fprintf(file, 'Min circularity: %g\n\n', GetValue(h.circularityVal));
-    
-    fprintf(file, '\n----------------\n');
-    fprintf(file, 'Num of manualy deleted grains: %g\n\n', h.GrainsDeletedManualy);
-
-    fprintf(file, '\n----------------\n');
-    fprintf(file, 'Number of detected grains: %g\n', GetValue(h.detectedCountVal));
-    fprintf(file, 'Number of grains after filtering: %g\n', h.Params.Number);
-    fprintf(file, 'Number of well detected grains: %g\n', length(h.WellDetectedGrains));
-
-    fprintf(file, '\n----------------\n');
-    fprintf(file, 'In pixels:\n');
-    fprintf(file, 'Median\nMean\nStandard devation\n\n');
-    dataMatrix = [h.Params.Diameter; 
-                  h.Params.ShortAxis; 
-                  h.Params.LongAxis; 
-                  h.Params.Circularity; 
-                  h.Params.Ratio];
-
-    for i = 1 : size(dataMatrix, 1)
-        data = dataMatrix(i,:);
-        fprintf(file, '%s:\n', dataTypes(i));
-        fprintf(file, '%g\n', data(1));
-        fprintf(file, '%g\n', data(2));
-        fprintf(file, '%g\n', data(3));     
-        fprintf(file, '\n');
-    end
-
-    fprintf(file, '----------------\n');
-    fprintf(file, 'In MMs:\n');
-    fprintf(file, 'Median\nMean\nStandard devation\n\n');
-    dataMatrix = [Converter.PixelsToMilimeters(h.Params.Diameter); 
-                  Converter.PixelsToMilimeters(h.Params.ShortAxis); 
-                  Converter.PixelsToMilimeters(h.Params.LongAxis); 
-                  h.Params.Circularity; h.Params.Ratio];
-
-    for i = 1 : size(dataMatrix, 1)
-        data = dataMatrix(i,:);
-        fprintf(file, '%s:\n', dataTypes(i));
-        fprintf(file, '%g\n', data(1));
-        fprintf(file, '%g\n', data(2));
-        fprintf(file, '%g\n', data(3));     
-        fprintf(file, '\n');
-    end
-
-
-    fprintf(file, '\n-----------------------------------------\n');
-    fprintf(file, 'Granulometry data:\n');
-    fprintf(file, '\n');
-    fprintf(file, '< 0.5\t:\t%g\n', h.Params.Granulometry(1));
-    fprintf(file, '0.5 >=\t:\t%g\n', h.Params.Granulometry(2));
-    fprintf(file, '0.71 >=\t:\t%g\n', h.Params.Granulometry(3));
-    fprintf(file, '1.0 >=\t:\t%g\n', h.Params.Granulometry(4));
-    fprintf(file, '1.4 >=\t:\t%g\n', h.Params.Granulometry(5));
-    fprintf(file, '2.0 >=\t:\t%g\n', h.Params.Granulometry(6));
-    fprintf(file, '2.8 >=\t:\t%g\n', h.Params.Granulometry(7));
-    fprintf(file, '4.0 >=\t:\t%g\n', h.Params.Granulometry(8));
-
-    fclose(file);
-
-
-% --- writes grains data to file
-function WriteGrainsToFile(hObject)
-    h = guidata(hObject);
-
-    resultDirectory = h.ResultWriter.GetResultDirectory();
-    fileName = Path.Combine(resultDirectory, 'data.xls');
-    
-    if isfile(fileName) 
-        delete(fileName);
-    end
-
-    Index = [1:1:h.Params.Number].';
-    EquivDiameter = h.Params.DiametersList.';
-    Perimeter = h.Params.Perimeters.';
-    Area = h.Params.Area.';
-    MinorAxis = h.Params.ShortAxisList.';
-    MajorAxis = h.Params.LongAxisList.';
-    Circularity = h.Params.CircularityList.';
-    T = table(Index, EquivDiameter, Perimeter, Area, MinorAxis, MajorAxis, Circularity);
-    writetable(T, fileName);
-
-
 % --- Executes on button press in metric2PixelToggle.
 function ToMetrics_Callback(hObject)
     h = guidata(hObject);
@@ -619,7 +472,7 @@ function ToPixels_Callback(hObject)
     guidata(hObject, h);
 
 
-function resultImage = DeleteObjectsBydiameter(image, minDiameter, maxDiameter)
+function resultImage = DeleteObjectsByDiameter(image, minDiameter, maxDiameter)
     resultImage = bwpropfilt(imbinarize(image), 'EquivDiameter', [Converter.MilimetersToPixels(minDiameter) Converter.MilimetersToPixels(maxDiameter)]);
 
 
@@ -701,7 +554,7 @@ function deleteGrain_Callback(hObject, ~, ~)
     h.WellDetectedGrains = [];
     
     myImage = h.imageInfoContainer.GetSelectedImage();
-    DisplayImage(myImage, h);
+    DisplayImage(h, myImage);
     
     h.resultImage = DeleteObjectByIndex(h.resultImage, h.SelectedGrain);
 
@@ -734,8 +587,8 @@ function saveButton_Callback(hObject, eventdata, h)
     resultDirectory = h.ResultWriter.GetResultDirectory();
     saveas(newfig1, Path.Combine(resultDirectory, 'granulometry.png'),'png');
 
-    WriteDataToFile(hObject, ["Diameter", "Short axis", "Long axis", "Circularity", "Aspect ratio"]);
-    WriteGrainsToFile(hObject);
+    h.ResultWriter.WriteDataToFile(hObject);
+    h.ResultWriter.WriteGrainsToFile(hObject);
 
 
 function ShowOrigin_Callback(hObject, eventdata, h)
@@ -743,15 +596,35 @@ function ShowOrigin_Callback(hObject, eventdata, h)
     resultImageExist = isfield(h, 'resultImage') && length(ishandle(h.resultImage)) > 0;
 
     if h.showOriginFlag.Value == false && resultImageExist
-        DisplayImage(h.resultImage, h);
+        DisplayImage(h, h.resultImage);
     else
         myImage = h.imageInfoContainer.GetSelectedImage();
-        DisplayImage(myImage, h);
+        DisplayImage(h, myImage);
     end
 
     if resultImageExist
         DisplayContours(h.resultImage, h);
     end
+
+
+function result = IsInBoundary(boundary, Point)
+    result = inpolygon(Point(1, 1), Point(1, 2), boundary(:,2), boundary(:,1));
+
+
+function result = IsAlreadySelected(h, index)
+    result = any(h.SelectedGrain(:) == index);
+
+
+function handle = UnSelectGrain(h, boundary, index)
+    plot(h.display, boundary(:,2), boundary(:,1), 'r', 'LineWidth', 2)
+    h.SelectedGrain(h.SelectedGrain == index) = [];
+    handle = h;
+
+
+function handle = SelectGrain(h, boundary, index)
+    h.SelectedGrain(length(h.SelectedGrain) + 1) = index;
+    plot(h.display, boundary(:,2), boundary(:,1), 'b', 'LineWidth', 2)
+    handle = h;
 
 
 % --- Executes on mouse press over axes background.
@@ -774,14 +647,11 @@ function display_ButtonDownFcn(hObject, eventdata)
         for i = 1 : length(B)
             boundary = B{i};
 
-            if inpolygon(Mouse(1, 1), Mouse(1, 2), boundary(:,2), boundary(:,1))
-                if any(h.SelectedGrain(:) == i)
-
+            if IsInBoundary(boundary, Mouse)
+                if IsAlreadySelected(h, i)
                     scale2 = resizePos(3) / 1024;
                     boundary = boundary.*scale2;
-
-                    plot(h.display, boundary(:,2), boundary(:,1), 'r', 'LineWidth', 2)
-                    h.SelectedGrain(h.SelectedGrain == i) = [];
+                    h = UnSelectGrain(h, boundary, i);
                     break;
                 end
                 
@@ -790,8 +660,7 @@ function display_ButtonDownFcn(hObject, eventdata)
                 scale2 = resizePos(3) / 1024;
                 boundary = boundary.*scale2;
 
-                h.SelectedGrain(length(h.SelectedGrain) + 1) = i;
-                plot(h.display, boundary(:,2), boundary(:,1), 'b', 'LineWidth', 2)
+                h = SelectGrain(h, boundary, i);
             
                 diameter = Converter.PixelsToMilimeters(h.Params.DiametersList(i));
                 shortAxis = Converter.PixelsToMilimeters(h.Params.ShortAxisList(i));
@@ -847,7 +716,7 @@ function displayContoursCheckbox_Callback(hObject, eventdata, h)
     if toggleContours == 0
         cla(h.display);
         myImage = h.imageInfoContainer.GetSelectedImage();
-        DisplayImage(myImage, h);
+        DisplayImage(h, myImage);
         h.displayContours = false;
     else
         h.displayContours = true;

@@ -19,6 +19,14 @@ classdef ImageInfo
         function image = GetImage(obj)
             image = imread(obj.Path);
         end
+
+        function image = GetImageGray(obj)
+            image = obj.GetImage();
+            % change to grayscale for JPG
+            if Path.IsJpgFile(obj.Path)
+                image = rgb2gray(image);
+            end
+        end
     end
 end
 
