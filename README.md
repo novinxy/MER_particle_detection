@@ -1,4 +1,4 @@
-# Processing and analysis of digital microscopic images from the Mars Exploration Rover missio
+# Processing and analysis of digital microscopic images from the Mars Exploration Rover mission
 
 This projest is part of Applied Computer Science Master Thesis:
 
